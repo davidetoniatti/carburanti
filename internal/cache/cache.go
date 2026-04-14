@@ -47,19 +47,26 @@ func (c *Cache[T]) Get(key string) (T, bool) {
 		var zero T
 		return zero, false
 	}
+
 	if it.expiration > 0 && time.Now().UnixNano() > it.expiration {
 		c.mu.RUnlock()
 		c.mu.Lock()
 		defer c.mu.Unlock()
+
 		// Double check after lock
 		it, found = c.items[key]
-		if found && it.expiration > 0 && time.Now().UnixNano() > it.expiration {
+		if found && (it.expiration == 0 || time.Now().UnixNano() <= it.expiration) {
+			return it.value, true // Fresh value written between RUnlock and Lock
+		}
+
+		if found {
 			delete(c.items, key)
 		}
 		var zero T
 		return zero, false
 	}
-	c.mu.RUnlock()
+
+	defer c.mu.RUnlock()
 	return it.value, true
 }
 

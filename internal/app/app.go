@@ -24,7 +24,8 @@ type App struct {
 func New(baseURL string, staticFiles embed.FS) (*App, error) {
 	c := cache.New[any]()
 	apiClient := api.NewClient(baseURL, c)
-	h := handlers.NewServer(apiClient)
+	geocodeClient := api.NewNominatimClient(c)
+	h := handlers.NewServer(apiClient, geocodeClient)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/search", h.SearchHandler)
@@ -38,8 +39,8 @@ func New(baseURL string, staticFiles embed.FS) (*App, error) {
 	}
 	mux.Handle("/", http.FileServer(http.FS(sub)))
 
-	// Chain middlewares: Gzip -> Cache-Control
-	handler := gzipMiddleware(cacheControlMiddleware(mux))
+	// Chain middlewares: Logging -> Gzip -> Cache-Control
+	handler := loggingMiddleware(gzipMiddleware(cacheControlMiddleware(mux)))
 
 	srv := &http.Server{
 		Handler:      handler,
@@ -73,10 +74,31 @@ func (a *App) Close() {
 	}
 }
 
-func cacheControlMiddleware(next http.Handler) http.Handler {
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rec, r)
+		slog.Info("request handled",
+			"method", r.Method,
+			"path", r.URL.Path,
+			"status", rec.status,
+			"duration", time.Since(start))
+	})
+}
+
+func cacheControlMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
 		} else if r.URL.Path == "/" || strings.HasSuffix(r.URL.Path, ".html") {
@@ -84,13 +106,7 @@ func cacheControlMiddleware(next http.Handler) http.Handler {
 		} else if strings.Contains(r.URL.Path, "/js/") || strings.Contains(r.URL.Path, "/css/") {
 			w.Header().Set("Cache-Control", "public, max-age=3600")
 		}
-		
 		next.ServeHTTP(w, r)
-		
-		slog.Info("request handled", 
-			"method", r.Method, 
-			"path", r.URL.Path, 
-			"duration", time.Since(start))
 	})
 }
 

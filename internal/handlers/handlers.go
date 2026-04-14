@@ -16,12 +16,14 @@ const (
 )
 
 type Server struct {
-	Client api.StationProvider
+	Client   api.StationProvider
+	Geocoder api.Geocoder
 }
 
-func NewServer(client api.StationProvider) *Server {
+func NewServer(client api.StationProvider, geocoder api.Geocoder) *Server {
 	return &Server{
-		Client: client,
+		Client:   client,
+		Geocoder: geocoder,
 	}
 }
 
@@ -186,10 +188,7 @@ func (s *Server) GeocodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// For now we proxy to Nominatim. In a production app we might use our own provider.
-	// We use the client to perform the request so it can be cached or managed.
-	// Actually let's add Geocode to StationProvider.
-	results, err := s.Client.GeocodeWithContext(r.Context(), q, r.Header.Get("Accept-Language"))
+	results, err := s.Geocoder.GeocodeWithContext(r.Context(), q, r.Header.Get("Accept-Language"))
 	if err != nil {
 		slog.Error("Geocode error", "error", err)
 		s.errorJSON(w, "geocoding service error", http.StatusBadGateway)

@@ -14,8 +14,9 @@ Go web application that shows an interactive map of fuel prices in Italy, using 
 ## Quick Start
 
 ```bash
-# Requires Go 1.25+
-git clone ...
+git clone https://github.com/davidetoniatti/carburanti
+cd carburanti
+go run .
 ```
 
 Then open: http://localhost:8080
@@ -34,13 +35,21 @@ Then open: http://localhost:8080
 carburanti/
 ├── main.go                    # HTTP Server + static files embedding
 ├── internal/
-│   ├── api/client.go          # Client for the osservaprezzi API
-│   ├── handlers/handlers.go   # HTTP handlers (proxy to API)
-│   └── models/models.go       # Data structures
+│   ├── api/                   # Clients for external APIs
+│   │   ├── client.go          # MISE API client
+│   │   └── geocode.go         # Nominatim Geocoding client
+│   ├── app/                   # App bootstrap and middlewares
+│   ├── cache/                 # Generic thread-safe cache
+│   ├── handlers/              # HTTP handlers
+│   └── models/                # Data structures
 └── static/
     ├── index.html
     ├── css/style.css
-    └── js/app.js
+    └── js/                    # Modular frontend logic
+        ├── api.js             # API interaction
+        ├── app.js             # App entry point
+        ├── map.js             # Leaflet map logic
+        └── ...
 ```
 
 ## API Endpoints (proxy)
@@ -48,6 +57,7 @@ carburanti/
 - `GET /api/search?lat=&lng=&radius=` — Search for stations in the area
 - `GET /api/station?id=` — Station details
 - `GET /api/fuels` — Fuel types list
+- `GET /api/geocode?q=` — Geocoding proxy to Nominatim
 
 ## Production Build
 

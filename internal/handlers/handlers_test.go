@@ -61,7 +61,7 @@ func TestSearchHandler_DeepValidation(t *testing.T) {
 			}, nil
 		},
 	}
-	srv := NewServer(mock)
+	srv := NewServer(mock, mock)
 
 	t.Run("Valid Search with Rules", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0&fuel=1&mode=self", nil)
@@ -160,7 +160,7 @@ func TestSearchHandler_CacheMutationReproduction(t *testing.T) {
 			return sharedResponse, nil
 		},
 	}
-	srv := NewServer(mock)
+	srv := NewServer(mock, mock)
 
 	// First request for FuelID 1
 	req1 := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0&fuel=1&mode=self", nil)
@@ -210,7 +210,7 @@ func TestSearchHandler_Concurrency(t *testing.T) {
 			return sharedResponse, nil
 		},
 	}
-	srv := NewServer(mock)
+	srv := NewServer(mock, mock)
 
 	const workers = 20
 	errChan := make(chan error, workers)
@@ -245,4 +245,84 @@ func TestSearchHandler_Concurrency(t *testing.T) {
 			t.Error(err)
 		}
 	}
+}
+
+func TestGeocodeHandler(t *testing.T) {
+	mock := &mockStationProvider{
+		geocodeFunc: func(ctx context.Context, query, lang string) (any, error) {
+			if query == "error" {
+				return nil, errors.New("boom")
+			}
+			return []map[string]string{{"name": "Roma"}}, nil
+		},
+	}
+	srv := NewServer(mock, mock)
+
+	t.Run("Success", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/geocode?q=roma", nil)
+		rr := httptest.NewRecorder()
+		srv.GeocodeHandler(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("expected 200, got %d", rr.Code)
+		}
+		if rr.Header().Get("Content-Type") != "application/json" {
+			t.Errorf("expected application/json, got %s", rr.Header().Get("Content-Type"))
+		}
+	})
+
+	t.Run("Missing Query", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/geocode", nil)
+		rr := httptest.NewRecorder()
+		srv.GeocodeHandler(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", rr.Code)
+		}
+	})
+
+	t.Run("Service Error", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/geocode?q=error", nil)
+		rr := httptest.NewRecorder()
+		srv.GeocodeHandler(rr, req)
+		if rr.Code != http.StatusBadGateway {
+			t.Errorf("expected 502, got %d", rr.Code)
+		}
+	})
+}
+
+func TestStationHandler_DeepValidation(t *testing.T) {
+	mock := &mockStationProvider{
+		detailFunc: func(ctx context.Context, id int) (*models.GasStation, error) {
+			return &models.GasStation{ID: id, Name: "Details"}, nil
+		},
+	}
+	srv := NewServer(mock, mock)
+
+	t.Run("Valid ID", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/station?id=123", nil)
+		rr := httptest.NewRecorder()
+		srv.StationHandler(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d", rr.Code)
+		}
+		if rr.Header().Get("Content-Type") != "application/json" {
+			t.Errorf("expected application/json, got %s", rr.Header().Get("Content-Type"))
+		}
+		var s models.GasStation
+		json.NewDecoder(rr.Body).Decode(&s)
+		if s.ID != 123 {
+			t.Errorf("expected ID 123, got %d", s.ID)
+		}
+	})
+
+	t.Run("Invalid ID", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/station?id=-1", nil)
+		rr := httptest.NewRecorder()
+		srv.StationHandler(rr, req)
+
+		if rr.Code != http.StatusBadRequest {
+			t.Errorf("expected 400, got %d", rr.Code)
+		}
+	})
 }

@@ -8,7 +8,6 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -25,7 +24,6 @@ type StationProvider interface {
 	GetServiceAreaWithContext(ctx context.Context, id int) (*models.GasStation, error)
 	GetFuels() ([]models.FuelType, error)
 	GetFuelsWithContext(ctx context.Context) ([]models.FuelType, error)
-	GeocodeWithContext(ctx context.Context, query, lang string) (any, error)
 }
 
 type Client struct {
@@ -224,52 +222,5 @@ func (c *Client) GetFuelsWithContext(ctx context.Context) ([]models.FuelType, er
 			return nil, res.Err
 		}
 		return res.Val.([]models.FuelType), nil
-	}
-}
-
-func (c *Client) GeocodeWithContext(ctx context.Context, query, lang string) (any, error) {
-	cacheKey := fmt.Sprintf("geocode:%s:%s", query, lang)
-	if val, found := c.Cache.Get(cacheKey); found {
-		return val, nil
-	}
-
-	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
-		u := fmt.Sprintf("https://nominatim.openstreetmap.org/search?format=json&q=%s&countrycodes=it&limit=1", 
-			url.QueryEscape(query))
-		
-		req, err := http.NewRequestWithContext(context.Background(), "GET", u, nil)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("Accept-Language", lang)
-		req.Header.Set("User-Agent", "CarburantiApp/1.0")
-
-		resp, err := c.HTTPClient.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("nominatim returned %d", resp.StatusCode)
-		}
-
-		var results []any
-		if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
-			return nil, err
-		}
-
-		c.Cache.Set(cacheKey, results, 24*time.Hour)
-		return results, nil
-	})
-
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case res := <-ch:
-		if res.Err != nil {
-			return nil, res.Err
-		}
-		return res.Val, nil
 	}
 }

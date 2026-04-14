@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"carburanti/internal/app"
@@ -55,7 +56,7 @@ func TestSmoke_FullApp(t *testing.T) {
 		t.Errorf("expected 200 for index, got %d", resp.StatusCode)
 	}
 	body, _ := io.ReadAll(resp.Body)
-	if !contains(string(body), "<div id=\"app\">") {
+	if !strings.Contains(string(body), "<div id=\"app\">") {
 		t.Error("index.html doesn't contain expected app div")
 	}
 
@@ -68,15 +69,4 @@ func TestSmoke_FullApp(t *testing.T) {
 	if resp2.StatusCode != http.StatusOK {
 		t.Errorf("expected 200 for fuels, got %d", resp2.StatusCode)
 	}
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && func() bool {
-		for i := 0; i <= len(s)-len(substr); i++ {
-			if s[i:i+len(substr)] == substr {
-				return true
-			}
-		}
-		return false
-	}()
 }

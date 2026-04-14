@@ -1,5 +1,7 @@
 package models
 
+import "encoding/json"
+
 type Location struct {
 	Lat float64 `json:"lat"`
 	Lng float64 `json:"lng"`
@@ -34,22 +36,22 @@ type OpeningHours struct {
 }
 
 type GasStation struct {
-	ID               int            `json:"id"`
-	Name             string         `json:"name"`
-	Fuels            []Fuel         `json:"fuels"`
-	Location         *Location      `json:"location,omitempty"`
-	InsertDate       string         `json:"insertDate,omitempty"`
-	Address          *string        `json:"address"`
-	Brand            string         `json:"brand"`
-	Distance         string         `json:"distance,omitempty"`
-	PhoneNumber      string         `json:"phoneNumber,omitempty"`
-	Email            string         `json:"email,omitempty"`
-	Website          string         `json:"website,omitempty"`
-	Company          string         `json:"company,omitempty"`
-	Services         []interface{}  `json:"services,omitempty"`
-	Hours            []OpeningHours `json:"orariapertura,omitempty"`
-	SelectedPrice    float64        `json:"selectedPrice,omitempty"`
-	SelectedFuelName string         `json:"selectedFuelName,omitempty"`
+	ID               int             `json:"id"`
+	Name             string          `json:"name"`
+	Fuels            []Fuel          `json:"fuels"`
+	Location         *Location       `json:"location,omitempty"`
+	InsertDate       string          `json:"insertDate,omitempty"`
+	Address          *string         `json:"address"`
+	Brand            string          `json:"brand"`
+	Distance         string          `json:"distance,omitempty"`
+	PhoneNumber      string          `json:"phoneNumber,omitempty"`
+	Email            string          `json:"email,omitempty"`
+	Website          string          `json:"website,omitempty"`
+	Company          string          `json:"company,omitempty"`
+	Services         json.RawMessage `json:"services,omitempty"`
+	Hours            []OpeningHours  `json:"orariapertura,omitempty"`
+	SelectedPrice    float64         `json:"selectedPrice,omitempty"`
+	SelectedFuelName string          `json:"selectedFuelName,omitempty"`
 }
 
 type SearchRequest struct {

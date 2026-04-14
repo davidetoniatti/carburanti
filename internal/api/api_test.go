@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -145,9 +147,9 @@ func TestCache_Expiration(t *testing.T) {
 }
 
 func TestClient_SingleflightCoalescing(t *testing.T) {
-	calls := 0
+	var calls atomic.Int64
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls++
+		calls.Add(1)
 		time.Sleep(100 * time.Millisecond) // Slow response to allow coalescing
 		resp := models.SearchResponse{Success: true}
 		json.NewEncoder(w).Encode(resp)
@@ -159,27 +161,35 @@ func TestClient_SingleflightCoalescing(t *testing.T) {
 
 	// Fire many concurrent requests
 	const workers = 50
+	var wg sync.WaitGroup
 	errChan := make(chan error, workers)
 	for i := 0; i < workers; i++ {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			_, err := client.SearchZone(41.0, 12.0, 5)
 			errChan <- err
 		}()
 	}
 
-	for i := 0; i < workers; i++ {
-		if err := <-errChan; err != nil {
+	wg.Wait()
+	close(errChan)
+
+	for err := range errChan {
+		if err != nil {
 			t.Errorf("request failed: %v", err)
 		}
 	}
 
-	if calls != 1 {
-		t.Errorf("expected only 1 upstream call, got %d", calls)
+	if calls.Load() != 1 {
+		t.Errorf("expected only 1 upstream call, got %d", calls.Load())
 	}
 }
 
 func TestClient_SingleflightCancellation(t *testing.T) {
+	started := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(started) // Signal that the first request reached the server
 		time.Sleep(100 * time.Millisecond)
 		resp := models.SearchResponse{Success: true}
 		json.NewEncoder(w).Encode(resp)
@@ -197,14 +207,20 @@ func TestClient_SingleflightCancellation(t *testing.T) {
 		_, err := client.SearchZoneWithContext(ctx1, 41.0, 12.0, 5)
 		errChan <- err
 	}()
-    
-	time.Sleep(20 * time.Millisecond)
-    
+
+	// Wait for first request to reach server
+	select {
+	case <-started:
+	case <-time.After(1 * time.Second):
+		t.Fatal("timed out waiting for request 1 to start")
+	}
+
 	go func() {
 		_, err := client.SearchZoneWithContext(ctx2, 41.0, 12.0, 5)
 		errChan <- err
 	}()
 
+	// Small sleep to ensure second goroutine joined the flight
 	time.Sleep(20 * time.Millisecond)
 	cancel1()
 
@@ -212,15 +228,15 @@ func TestClient_SingleflightCancellation(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		errs = append(errs, <-errChan)
 	}
-    
-    succeeded := 0
-    for _, e := range errs {
-        if e == nil {
-            succeeded++
-        }
-    }
-    
-    if succeeded != 1 {
-        t.Errorf("expected 1 success, got %d. Errs: %v", succeeded, errs)
-    }
+
+	succeeded := 0
+	for _, e := range errs {
+		if e == nil {
+			succeeded++
+		}
+	}
+
+	if succeeded != 1 {
+		t.Errorf("expected 1 success, got %d. Errs: %v", succeeded, errs)
+	}
 }
