@@ -130,7 +130,7 @@ func TestClient_ErrorHandling(t *testing.T) {
 func TestCache_Expiration(t *testing.T) {
 	c := cache.New[any]()
 	c.Set("key", "value", 100*time.Millisecond)
-	
+
 	val, found := c.Get("key")
 	if !found || val != "value" {
 		t.Fatal("expected to find value")

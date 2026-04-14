@@ -32,7 +32,7 @@ func TestSmoke_FullApp(t *testing.T) {
 	// Wait for start
 	time.Sleep(100 * time.Millisecond)
 
-	// Test 1: Frontend serving
+	// Frontend serving
 	resp, err := http.Get("http://localhost:9999/")
 	if err != nil {
 		t.Fatalf("failed to fetch index: %v", err)
@@ -46,7 +46,7 @@ func TestSmoke_FullApp(t *testing.T) {
 		t.Error("index.html doesn't contain expected app div")
 	}
 
-	// Test 2: API serving
+	// API serving
 	resp2, err := http.Get("http://localhost:9999/api/fuels")
 	if err != nil {
 		t.Fatalf("failed to fetch fuels: %v", err)

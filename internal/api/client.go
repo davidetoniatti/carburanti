@@ -73,19 +73,19 @@ func (c *Client) doRequest(method, url string, body []byte) ([]byte, error) {
 }
 
 func (c *Client) SearchZone(lat, lng float64, radius int) (*models.SearchResponse, error) {
-	// 1. Quantize coordinates to improve cache hits
+	// Quantize coordinates to improve cache hits
 	// 4 decimals is approx 11m at equator, good enough for "same area"
 	qLat := math.Round(lat*10000) / 10000
 	qLng := math.Round(lng*10000) / 10000
-	
+
 	cacheKey := fmt.Sprintf("search:%f:%f:%d", qLat, qLng, radius)
-	
-	// 2. Check cache
+
+	// Check cache
 	if val, found := c.Cache.Get(cacheKey); found {
 		return val.(*models.SearchResponse), nil
 	}
 
-	// 3. Coalesce identical requests
+	// Coalesce identical requests
 	res, err, _ := c.sfGroup.Do(cacheKey, func() (any, error) {
 		payload := models.SearchRequest{
 			Points: []models.Location{{Lat: lat, Lng: lng}},

@@ -46,7 +46,8 @@ export function initMap(onSearch, center = [41.9028, 12.4964], zoom = 13) {
       }
 
       if (significant) {
-        onSearch(center.lat, center.lng);
+        const btn = document.getElementById('searchHereBtn');
+        if (btn) btn.classList.remove('hidden');
       }
       updateURL();
     }, 250);

@@ -106,6 +106,14 @@ function setupControls() {
     controls.classList.toggle('mobile-hidden');
   });
 
+  const searchHereBtn = document.getElementById('searchHereBtn');
+  if (searchHereBtn) {
+    searchHereBtn.addEventListener('click', () => {
+      const c = state.map.getCenter();
+      searchAt(c.lat, c.lng);
+    });
+  }
+
   const addressInput = document.getElementById('addressSearch');
   const searchBtn = document.getElementById('searchBtn');
   const doSearch = async () => {
@@ -132,6 +140,8 @@ function setupControls() {
 
 async function searchAt(lat, lng) {
   setStatus(t('searching'));
+  const btn = document.getElementById('searchHereBtn');
+  if (btn) btn.classList.add('hidden');
   try {
     const data = await searchStations(lat, lng, state.radius, state.selectedFuelId, state.mode);
     state.stations = data.results || [];
