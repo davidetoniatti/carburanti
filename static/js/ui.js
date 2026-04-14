@@ -48,6 +48,66 @@ export function closePanel() {
   }
 }
 
+export function toggleHistoryPanel() {
+  const panel = document.getElementById('historyPanel');
+  const btn = document.getElementById('historyToggle');
+  const isHidden = panel.classList.contains('hidden');
+  
+  if (isHidden) {
+    closePanel();
+    renderHistory();
+    panel.classList.remove('hidden');
+    btn.classList.add('active');
+  } else {
+    closeHistoryPanel();
+  }
+}
+
+export function closeHistoryPanel() {
+  document.getElementById('historyPanel').classList.add('hidden');
+  document.getElementById('historyToggle').classList.remove('active');
+}
+
+export function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (state.history.length === 0) {
+    list.innerHTML = `<li class="empty-msg">${t('no_history')}</li>`;
+    return;
+  }
+  
+  list.innerHTML = state.history.map(h => `
+    <li class="history-item" data-id="${h.id}">
+      <div class="history-item-brand">${escapeHtml(h.brand || t('nd'))}</div>
+      <div class="history-item-name">${escapeHtml(h.name)}</div>
+      <div class="history-item-address">${escapeHtml(h.address)}</div>
+    </li>
+  `).join('');
+  
+  list.querySelectorAll('.history-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const id = String(item.dataset.id);
+      const historyEntry = state.history.find(h => String(h.id) === id);
+      
+      console.log(`[History] Clicking station ${id}`, historyEntry);
+
+      // Trigger opening the station on the map
+      const entry = state.markers.get(id);
+      if (entry) {
+        state.map.setView(entry.marker.getLatLng(), 15);
+        window.dispatchEvent(new CustomEvent('open-station', { detail: { id, marker: entry.marker } }));
+      } else if (historyEntry && historyEntry.location) {
+        // Force map centering even if marker doesn't exist
+        const loc = historyEntry.location;
+        state.map.setView([loc.lat, loc.lng], 15);
+        window.dispatchEvent(new CustomEvent('open-station', { detail: { id, location: loc } }));
+      } else {
+        window.dispatchEvent(new CustomEvent('open-station', { detail: { id } }));
+      }
+      closeHistoryPanel();
+    });
+  });
+}
+
 function renderFuelCard(name, price, mode) {
   return `
     <div class="fuel-card">

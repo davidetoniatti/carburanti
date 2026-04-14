@@ -62,20 +62,23 @@ body {
 }
 #logo em { color: var(--accent); font-style: normal; }
 
-#filterToggle {
+#filterToggle, .history-btn {
   background: var(--surface2);
   border: 1px solid var(--border);
   color: var(--text-muted);
   padding: 8px;
   border-radius: 8px;
   cursor: pointer;
-  display: none;
-  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-#filterToggle.active { border-color: var(--accent); color: var(--accent); }
+#filterToggle { display: none; margin-left: 12px; }
+#filterToggle.active, .history-btn.active { border-color: var(--accent); color: var(--accent); }
 
 #controls {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 16px;
 }
@@ -88,6 +91,61 @@ body {
   color: var(--text-muted);
   text-transform: uppercase;
 }
+
+#historyPanel {
+  position: fixed;
+  top: var(--topbar-h);
+  right: 0;
+  bottom: var(--status-h);
+  width: var(--panel-w);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  z-index: 1150;
+  overflow-y: auto;
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform .3s cubic-bezier(.4,0,.2,1), visibility .3s;
+  border-radius: 12px 0 0 12px;
+}
+#historyPanel.hidden { 
+  transform: translateX(110%); 
+  visibility: hidden;
+  transition: transform .3s cubic-bezier(.4,0,.2,1), visibility 0s .3s;
+}
+
+#historyPanelClose {
+  position: sticky;
+  top: 0;
+  float: right;
+  margin: 12px 12px 0 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+#historyPanelContent { padding: 12px 16px 24px; }
+
+#historyList { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.history-item { 
+  background: var(--surface2); 
+  border: 1px solid var(--border); 
+  border-radius: 8px; 
+  padding: 10px 12px; 
+  cursor: pointer; 
+  transition: border-color 0.2s;
+}
+.history-item:hover { border-color: var(--accent); }
+.history-item-name { font-weight: 600; font-size: 14px; }
+.history-item-brand { font-size: 11px; color: var(--accent); font-family: 'Space Mono', monospace; }
+.history-item-address { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
 /* Search specific */
 .search-group { min-width: 200px; max-width: none; }
@@ -317,7 +375,7 @@ select {
 .price-marker.selected { transform: scale(1.15); border-width: 3px; z-index: 999 !important; }
 
 /* -- MOBILE RESPONSIVE -- */
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
   #logo { display: none; }
   #filterToggle { display: flex; }
   

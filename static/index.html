@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title data-i18n="title">Fuel Prices</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ffffff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -31,6 +35,10 @@
 
       <button id="filterToggle" aria-label="Toggle filters">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+      </button>
+
+      <button id="historyToggle" class="history-btn" aria-label="Show history">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
       </button>
 
       <div id="controls" class="mobile-hidden">
@@ -97,6 +105,15 @@
           <div class="spinner"></div>
           <p data-i18n="loading_details">Loading details...</p>
         </div>
+      </div>
+    </div>
+
+    <!-- History Panel -->
+    <div id="historyPanel" class="hidden">
+      <button id="historyPanelClose" aria-label="Close history">x</button>
+      <div id="historyPanelContent">
+        <div class="section-title" data-i18n="recent_title">RECENT STATIONS</div>
+        <ul id="historyList"></ul>
       </div>
     </div>
 

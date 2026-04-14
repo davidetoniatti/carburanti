@@ -1,8 +1,8 @@
 import { state, getStateFromURL, updateURL } from './state.js';
 import { translations, t } from './i18n.js';
 import { fetchFuels, searchStations, geocodeAddress } from './api.js';
-import { initMap, syncMarkers } from './map.js';
-import { updateUILanguage, setStatus, closePanel } from './ui.js';
+import { initMap, syncMarkers, openStation } from './map.js';
+import { updateUILanguage, setStatus, closePanel, toggleHistoryPanel, closeHistoryPanel } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const browserLang = navigator.language.split('-')[0];
@@ -102,6 +102,28 @@ function setupControls() {
   });
 
   document.getElementById('panelClose').addEventListener('click', closePanel);
+  document.getElementById('historyToggle').addEventListener('click', toggleHistoryPanel);
+  document.getElementById('historyPanelClose').addEventListener('click', closeHistoryPanel);
+
+  window.addEventListener('open-station', async (e) => {
+    const { id, marker, location } = e.detail;
+    const sId = String(id);
+    if (marker) {
+      openStation(sId, marker);
+    } else {
+      const entry = state.markers.get(sId);
+      if (entry) {
+        state.map.setView(entry.marker.getLatLng(), 15);
+        openStation(sId, entry.marker);
+      } else {
+        if (location) {
+          await searchAt(location.lat, location.lng);
+        }
+        const newEntry = state.markers.get(sId);
+        openStation(sId, newEntry ? newEntry.marker : null);
+      }
+    }
+  });
 
   const filterToggle = document.getElementById('filterToggle');
   const controls = document.getElementById('controls');
@@ -129,6 +151,7 @@ function setupControls() {
       if (data && data.length > 0) {
         const { lat, lon } = data[0];
         state.map.setView([lat, lon], 14);
+        searchAt(lat, lon);
       } else {
         setStatus(t('nd'));
       }

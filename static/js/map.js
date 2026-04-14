@@ -1,4 +1,4 @@
-import { state, updateURL } from './state.js';
+import { state, updateURL, addToHistory } from './state.js';
 import { t } from './i18n.js';
 import { priceColor, escapeHtml, shortName } from './formatters.js';
 import { fetchStationDetails, searchStations } from './api.js';
@@ -76,12 +76,13 @@ export function syncMarkers() {
 
   for (const item of processedStations) {
     const { station, price } = item;
-    newStationIds.add(station.id);
+    const sId = String(station.id);
+    newStationIds.add(sId);
     const color = priceColor(price, minPrice, maxPrice);
     const priceText = price.toFixed(3);
 
-    if (state.markers.has(station.id)) {
-      const entry = state.markers.get(station.id);
+    if (state.markers.has(sId)) {
+      const entry = state.markers.get(sId);
       entry.station = station;
       const el = entry.marker.getElement();
       if (el) {
@@ -97,20 +98,20 @@ export function syncMarkers() {
     } else {
       const icon = L.divIcon({
         className: '',
-        html: `<div class="price-marker" style="border-color:${color};color:${color}" data-id="${station.id}">
+        html: `<div class="price-marker" style="border-color:${color};color:${color}" data-id="${sId}">
           <span class="marker-price">${priceText}</span>
         </div>`,
         iconAnchor: [24, 12],
         iconSize: [48, 24],
       });
       const marker = L.marker([station.location.lat, station.location.lng], { icon }).addTo(state.map);
-      marker.on('click', () => openStation(station.id, marker));
-      state.markers.set(station.id, { marker, station });
+      marker.on('click', () => openStation(sId, marker));
+      state.markers.set(sId, { marker, station });
     }
   }
 
   for (const [id, entry] of state.markers.entries()) {
-    if (!newStationIds.has(id)) {
+    if (!newStationIds.has(String(id))) {
       entry.marker.remove();
       state.markers.delete(id);
       if (state.selectedMarker === entry.marker) state.selectedMarker = null;
@@ -119,13 +120,30 @@ export function syncMarkers() {
 }
 
 export async function openStation(id, marker) {
+  const sId = String(id);
+  
+  // Track known location from marker or state
+  let knownLocation = null;
+  if (marker) {
+    const ll = marker.getLatLng();
+    knownLocation = { lat: ll.lat, lng: ll.lng };
+  } else {
+    const entry = state.markers.get(sId);
+    if (entry) {
+      const ll = entry.marker.getLatLng();
+      knownLocation = { lat: ll.lat, lng: ll.lng };
+    }
+  }
+
   if (state.selectedMarker) {
     const el = state.selectedMarker.getElement();
     if (el) el.querySelector('.price-marker')?.classList.remove('selected');
   }
   state.selectedMarker = marker;
-  const el = marker.getElement();
-  if (el) el.querySelector('.price-marker')?.classList.add('selected');
+  if (marker) {
+    const el = marker.getElement();
+    if (el) el.querySelector('.price-marker')?.classList.add('selected');
+  }
   
   const panel = document.getElementById('panel');
   panel.classList.remove('hidden');
@@ -136,8 +154,21 @@ export async function openStation(id, marker) {
     </div>`;
     
   try {
-    const station = await fetchStationDetails(id);
+    const station = await fetchStationDetails(sId);
     state.currentStationData = station;
+    
+    // Merge known location if missing from details
+    if (!station.location && knownLocation) {
+      station.location = knownLocation;
+    }
+    
+    addToHistory(station);
+    
+    // If no marker was provided (history click), center the map if location is available
+    if (!marker && station.location) {
+      state.map.setView([station.location.lat, station.location.lng], 15);
+    }
+    
     renderPanel(station);
   } catch (err) {
     document.getElementById('panelContent').innerHTML = `

@@ -14,7 +14,30 @@ export const state = {
   currentStationData: null,
   lastSearchCenter: null,
   lastSearchZoom: null,
+  history: JSON.parse(localStorage.getItem('carburanti_history')) || []
 };
+
+export function saveHistory() {
+  localStorage.setItem('carburanti_history', JSON.stringify(state.history.slice(0, 10)));
+}
+
+export function addToHistory(station) {
+  const sId = String(station.id);
+  const existing = state.history.find(h => String(h.id) === sId);
+  
+  const entry = {
+    id: sId,
+    name: station.name || existing?.name,
+    brand: station.brand || existing?.brand,
+    address: station.address || existing?.address,
+    location: station.location || existing?.location,
+    timestamp: Date.now()
+  };
+  
+  // Remove duplicate and keep latest 10
+  state.history = [entry, ...state.history.filter(h => String(h.id) !== sId)].slice(0, 10);
+  saveHistory();
+}
 
 export function getStateFromURL() {
   const params = new URLSearchParams(window.location.search);
