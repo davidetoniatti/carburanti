@@ -7,7 +7,6 @@ export const state = {
   domRefs: {}, // For caching DOM elements if needed
   fuels: [],
   selectedFuelId: null,
-  mode: 'self',       // 'self' | 'served' | 'best'
   radius: 5,
   selectedStationId: null,
   lang: 'en',
@@ -46,7 +45,6 @@ export function getStateFromURL() {
     lng: parseFloat(params.get('lng')),
     zoom: parseInt(params.get('zoom')),
     fuel: parseInt(params.get('fuel')),
-    mode: params.get('mode'),
     radius: parseInt(params.get('radius'))
   };
 }
@@ -60,7 +58,6 @@ export function updateURL() {
     params.set('zoom', state.map.getZoom());
   }
   if (state.selectedFuelId) params.set('fuel', state.selectedFuelId);
-  params.set('mode', state.mode);
   params.set('radius', state.radius);
   
   const newRelativePathQuery = window.location.pathname + '?' + params.toString();

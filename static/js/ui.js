@@ -102,14 +102,23 @@ export function renderHistory() {
   }
 }
 
-function renderFuelCard(name, price, mode) {
+function renderFuelRow(name, selfPrice, servedPrice) {
+  const selfText = selfPrice !== Infinity ? selfPrice.toFixed(3) : '--.---';
+  const servedText = servedPrice !== Infinity ? servedPrice.toFixed(3) : '--.---';
   return `
-    <div class="fuel-card">
-      <div class="fuel-left">
-        <span class="fuel-name">${escapeHtml(name)}</span>
-        <span class="fuel-mode ${mode.toLowerCase()}">${mode}</span>
+    <div class="fuel-row">
+      <span class="fuel-name">${escapeHtml(name)}</span>
+      <div class="fuel-prices-combined">
+        <div class="price-group">
+          <span class="price-label">SELF</span>
+          <span class="price-value">${selfText}</span>
+        </div>
+        <span class="price-sep">|</span>
+        <div class="price-group">
+          <span class="price-label">SERV</span>
+          <span class="price-value">${servedText}</span>
+        </div>
       </div>
-      <div class="fuel-price">${price.toFixed(3)}<span> EUR/L</span></div>
     </div>`;
 }
 
@@ -179,12 +188,7 @@ export function renderPanel(station) {
   
   let fuelHtml = '';
   for (const [name, entry] of fuelMap.entries()) {
-    if (entry.selfMin !== Infinity) {
-      fuelHtml += renderFuelCard(name, entry.selfMin, 'SELF');
-    }
-    if (entry.servedMin !== Infinity) {
-      fuelHtml += renderFuelCard(name, entry.servedMin, 'SERVED');
-    }
+    fuelHtml += renderFuelRow(name, entry.selfMin, entry.servedMin);
   }
   
   const addr = station.address || t('addr_not_available');

@@ -35,10 +35,10 @@ class TTLCache {
 const searchCache = new TTLCache(20);
 const detailPromises = new Map(); // In-flight detail requests deduplication
 
-function getQuantizedKey(lat, lng, radius, fuelId, mode) {
+function getQuantizedKey(lat, lng, radius, fuelId) {
   const qLat = Math.round(lat * 10000) / 10000;
   const qLng = Math.round(lng * 10000) / 10000;
-  return `search:${qLat}:${qLng}:${radius}:${fuelId}:${mode}`;
+  return `search:${qLat}:${qLng}:${radius}:${fuelId}`;
 }
 
 export async function fetchFuels() {
@@ -51,12 +51,15 @@ export async function fetchFuels() {
     return [
       { id: 1, name: 'Benzina' },
       { id: 2, name: 'Gasolio' },
+      { id: 3, name: 'HVO' },
+      { id: 4, name: 'GPL' },
+      { id: 5, name: 'Metano' },
     ];
   }
 }
 
-export function searchStations(lat, lng, radius, fuelId, mode) {
-  const cacheKey = getQuantizedKey(lat, lng, radius, fuelId, mode);
+export function searchStations(lat, lng, radius, fuelId) {
+  const cacheKey = getQuantizedKey(lat, lng, radius, fuelId);
   
   const cached = searchCache.get(cacheKey);
   if (cached) {
@@ -69,7 +72,7 @@ export function searchStations(lat, lng, radius, fuelId, mode) {
   state.requests.searchAbortController = new AbortController();
   const signal = state.requests.searchAbortController.signal;
   
-  const url = `/api/search?lat=${lat}&lng=${lng}&radius=${radius}&fuel=${fuelId}&mode=${mode}`;
+  const url = `/api/search?lat=${lat}&lng=${lng}&radius=${radius}&fuel=${fuelId}`;
   const promise = fetch(url, { signal })
     .then(res => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

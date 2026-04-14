@@ -15,7 +15,6 @@ async function bootstrapApp() {
   updateUILanguage();
   
   const urlState = getStateFromURL();
-  if (urlState.mode) state.mode = urlState.mode;
   if (urlState.radius) {
     state.radius = urlState.radius;
     document.getElementById('radiusSelect').value = state.radius;
@@ -58,22 +57,6 @@ async function loadFuels(defaultFuelId) {
 }
 
 function bindControls() {
-  document.querySelectorAll('.toggle-btn').forEach(btn => {
-    if (btn.dataset.mode === state.mode) {
-        btn.classList.add('active');
-    } else {
-        btn.classList.remove('active');
-    }
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.mode = btn.dataset.mode;
-      const c = state.map.getCenter();
-      performSearch(c.lat, c.lng);
-      updateURL();
-    });
-  });
-
   document.getElementById('radiusSelect').addEventListener('change', (e) => {
     state.radius = parseInt(e.target.value);
     const c = state.map.getCenter();
@@ -152,7 +135,7 @@ export async function performSearch(lat, lng) {
   if (btn) btn.classList.add('hidden');
   
   try {
-    const data = await searchStations(lat, lng, state.radius, state.selectedFuelId, state.mode);
+    const data = await searchStations(lat, lng, state.radius, state.selectedFuelId);
     
     state.stationsById.clear();
     state.visibleStationIds.clear();

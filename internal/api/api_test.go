@@ -15,43 +15,21 @@ import (
 )
 
 func TestClient_GetFuels(t *testing.T) {
-	// Mock upstream
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/registry/fuels" {
-			t.Errorf("expected path /registry/fuels, got %s", r.URL.Path)
-		}
-		resp := struct {
-			Results []map[string]string `json:"results"`
-		}{
-			Results: []map[string]string{
-				{"id": "1-x", "description": "Benzina"},
-				{"id": "2-x", "description": "Gasolio"},
-				{"id": "invalid", "description": "Skip Me"},
-			},
-		}
-		json.NewEncoder(w).Encode(resp)
-	}))
-	defer server.Close()
-
 	c := cache.New[any]()
-	client := NewClient(server.URL, c)
+	client := NewClient("", c)
 
 	fuels, err := client.GetFuels()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if len(fuels) != 2 {
-		t.Errorf("expected 2 fuels, got %d", len(fuels))
+	if len(fuels) != 5 {
+		t.Errorf("expected 5 fuels, got %d", len(fuels))
 	}
 
 	if fuels[0].ID != 1 || fuels[0].Name != "Benzina" {
 		t.Errorf("unexpected fuel data: %+v", fuels[0])
 	}
-
-	// Test cache
-	_, _ = client.GetFuels()
-	// If it reached here without panic and with same result, cache is likely working
 }
 
 func TestClient_SearchZone(t *testing.T) {

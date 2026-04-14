@@ -338,9 +338,27 @@ select {
   letter-spacing: 0.1em;
 }
 
-.fuel-grid { display: grid; gap: 6px; }
-.fuel-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; }
-.fuel-price { font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent); }
+.fuel-grid { display: flex; flex-direction: column; gap: 4px; }
+.fuel-row { 
+  background: var(--surface2); 
+  border: 1px solid var(--border); 
+  border-radius: 8px; 
+  padding: 8px 12px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+}
+.fuel-name { font-weight: 600; font-size: 14px; color: var(--text); }
+.fuel-prices-combined { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  font-family: 'Space Mono', monospace;
+}
+.price-group { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
+.price-label { font-size: 9px; color: var(--text-muted); margin-bottom: 2px; }
+.price-value { font-size: 16px; font-weight: 700; color: var(--accent); }
+.price-sep { color: var(--border); font-weight: 300; font-size: 20px; }
 
 .hours-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .day-cell { background: var(--surface2); border-radius: 4px; padding: 4px; text-align: center; }

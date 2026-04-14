@@ -8,7 +8,6 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"strconv"
 	"time"
 
 	"golang.org/x/sync/singleflight"
@@ -172,55 +171,11 @@ func (c *Client) GetFuels() ([]models.FuelType, error) {
 }
 
 func (c *Client) GetFuelsWithContext(ctx context.Context) ([]models.FuelType, error) {
-	cacheKey := "fuels"
-	if val, found := c.Cache.Get(cacheKey); found {
-		return val.([]models.FuelType), nil
-	}
-
-	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
-		url := c.BaseURL + "/registry/fuels"
-		respBody, err := c.doRequest(context.Background(), "GET", url, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		type rawFuelType struct {
-			ID          string `json:"id"`
-			Description string `json:"description"`
-		}
-		type rawFuelResponse struct {
-			Results []rawFuelType `json:"results"`
-		}
-
-		var fuelResp rawFuelResponse
-		if err := json.Unmarshal(respBody, &fuelResp); err != nil {
-			return nil, err
-		}
-
-		var filtered []models.FuelType
-		for _, f := range fuelResp.Results {
-			if len(f.ID) > 2 && f.ID[len(f.ID)-2:] == "-x" {
-				idStr := f.ID[:len(f.ID)-2]
-				if id, err := strconv.Atoi(idStr); err == nil {
-					filtered = append(filtered, models.FuelType{
-						ID:   id,
-						Name: f.Description,
-					})
-				}
-			}
-		}
-
-		c.Cache.Set(cacheKey, filtered, 24*time.Hour)
-		return filtered, nil
-	})
-
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case res := <-ch:
-		if res.Err != nil {
-			return nil, res.Err
-		}
-		return res.Val.([]models.FuelType), nil
-	}
+	return []models.FuelType{
+		{ID: 1, Name: "Benzina"},
+		{ID: 2, Name: "Gasolio"},
+		{ID: 3, Name: "HVO"},
+		{ID: 4, Name: "GPL"},
+		{ID: 5, Name: "Metano"},
+	}, nil
 }

@@ -69,4 +69,9 @@ func TestSmoke_FullApp(t *testing.T) {
 	if resp2.StatusCode != http.StatusOK {
 		t.Errorf("expected 200 for fuels, got %d", resp2.StatusCode)
 	}
+	var fuels []map[string]any
+	json.NewDecoder(resp2.Body).Decode(&fuels)
+	if len(fuels) != 5 {
+		t.Errorf("expected 5 fuels, got %d", len(fuels))
+	}
 }

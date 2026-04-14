@@ -5,9 +5,18 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"carburanti/internal/api"
 	"carburanti/internal/models"
+)
+
+const (
+	FuelBenzina = 1
+	FuelGasolio = 2
+	FuelHVO     = 3
+	FuelGPL     = 4
+	FuelMetano  = 5
 )
 
 const (
@@ -37,7 +46,6 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 	lngStr := q.Get("lng")
 	radiusStr := q.Get("radius")
 	fuelIDStr := q.Get("fuel")
-	mode := q.Get("mode") // self, served, best
 
 	if latStr == "" || lngStr == "" {
 		s.errorJSON(w, "lat and lng are required", http.StatusBadRequest)
@@ -64,11 +72,6 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 
 	fuelID, _ := strconv.Atoi(fuelIDStr)
 
-	if mode != "" && mode != "self" && mode != "served" && mode != "best" {
-		s.errorJSON(w, "invalid mode", http.StatusBadRequest)
-		return
-	}
-
 	result, err := s.Client.SearchZoneWithContext(r.Context(), lat, lng, radius)
 	if err != nil {
 		slog.Error("SearchZone error", "error", err)
@@ -76,15 +79,12 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Apply business rules: find best price for requested fuel/mode
-	// We MUST NOT mutate the original result because it might be a cached pointer.
-	// Instead, we build a new slice of stations for the response.
 	enrichedResults := make([]models.GasStation, len(result.Results))
 	copy(enrichedResults, result.Results)
 
 	if fuelID > 0 {
 		for i := range enrichedResults {
-			price, name := s.calculateSelectedPrice(&enrichedResults[i], fuelID, mode)
+			price, name := s.calculateSelectedPrice(&enrichedResults[i], fuelID)
 			enrichedResults[i].SelectedPrice = price
 			enrichedResults[i].SelectedFuelName = name
 		}
@@ -110,33 +110,38 @@ func (s *Server) writeJSON(w http.ResponseWriter, data any) {
 	w.Write(buf)
 }
 
-func (s *Server) calculateSelectedPrice(station *models.GasStation, fuelID int, mode string) (float64, string) {
+func (s *Server) calculateSelectedPrice(station *models.GasStation, fuelID int) (float64, string) {
 	var bestPrice float64
 	var fuelName string
 
 	for _, f := range station.Fuels {
-		if f.FuelID != fuelID {
+		if !s.isFuelMatch(f, fuelID) {
 			continue
 		}
 
-		isMatch := false
-		switch mode {
-		case "self":
-			isMatch = f.IsSelf
-		case "served":
-			isMatch = !f.IsSelf
-		default: // "best" or any other
-			isMatch = true
-		}
-
-		if isMatch {
-			if bestPrice == 0 || f.Price < bestPrice {
-				bestPrice = f.Price
-				fuelName = f.Name
-			}
+		if bestPrice == 0 || f.Price < bestPrice {
+			bestPrice = f.Price
+			fuelName = f.Name
 		}
 	}
 	return bestPrice, fuelName
+}
+
+func (s *Server) isFuelMatch(f models.Fuel, fuelID int) bool {
+	name := strings.ToLower(strings.TrimSpace(f.Name))
+	switch fuelID {
+	case FuelBenzina:
+		return name == "benzina"
+	case FuelGasolio:
+		return name == "gasolio"
+	case FuelHVO:
+		return strings.Contains(name, "hvo")
+	case FuelGPL:
+		return strings.Contains(name, "gpl")
+	case FuelMetano:
+		return strings.Contains(name, "metano")
+	}
+	return false
 }
 
 func (s *Server) StationHandler(w http.ResponseWriter, r *http.Request) {
