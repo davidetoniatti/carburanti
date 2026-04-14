@@ -47,12 +47,22 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	radius, _ := strconv.Atoi(radiusStr)
-	if radius == 0 {
+	if radius <= 0 {
 		radius = 5
 	}
+	if radius > 50 {
+		s.errorJSON(w, "radius too large (max 50km)", http.StatusBadRequest)
+		return
+	}
+
 	fuelID, _ := strconv.Atoi(fuelIDStr)
 
-	result, err := s.Client.SearchZone(lat, lng, radius)
+	if mode != "" && mode != "self" && mode != "served" && mode != "best" {
+		s.errorJSON(w, "invalid mode", http.StatusBadRequest)
+		return
+	}
+
+	result, err := s.Client.SearchZoneWithContext(r.Context(), lat, lng, radius)
 	if err != nil {
 		log.Printf("SearchZone error: %v", err)
 		s.errorJSON(w, "upstream service error", http.StatusBadGateway)
@@ -60,16 +70,27 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Apply business rules: find best price for requested fuel/mode
+	// We MUST NOT mutate the original result because it might be a cached pointer.
+	// Instead, we build a new slice of stations for the response.
+	enrichedResults := make([]models.GasStation, len(result.Results))
+	copy(enrichedResults, result.Results)
+
 	if fuelID > 0 {
-		for i := range result.Results {
-			price, name := s.calculateSelectedPrice(&result.Results[i], fuelID, mode)
-			result.Results[i].SelectedPrice = price
-			result.Results[i].SelectedFuelName = name
+		for i := range enrichedResults {
+			price, name := s.calculateSelectedPrice(&enrichedResults[i], fuelID, mode)
+			enrichedResults[i].SelectedPrice = price
+			enrichedResults[i].SelectedFuelName = name
 		}
 	}
 
+	response := models.SearchResponse{
+		Success: result.Success,
+		Center:  result.Center,
+		Results: enrichedResults,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	json.NewEncoder(w).Encode(response)
 }
 
 func (s *Server) calculateSelectedPrice(station *models.GasStation, fuelID int, mode string) (float64, string) {
@@ -116,7 +137,7 @@ func (s *Server) StationHandler(w http.ResponseWriter, r *http.Request) {
 		s.errorJSON(w, "invalid station id", http.StatusBadRequest)
 		return
 	}
-	station, err := s.Client.GetServiceArea(id)
+	station, err := s.Client.GetServiceAreaWithContext(r.Context(), id)
 	if err != nil {
 		log.Printf("GetServiceArea error: %v", err)
 		s.errorJSON(w, "upstream service error", http.StatusBadGateway)
@@ -131,7 +152,7 @@ func (s *Server) FuelsHandler(w http.ResponseWriter, r *http.Request) {
 		s.errorJSON(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	fuels, err := s.Client.GetFuels()
+	fuels, err := s.Client.GetFuelsWithContext(r.Context())
 	if err != nil {
 		log.Printf("GetFuels error: %v", err)
 		s.errorJSON(w, "upstream service error", http.StatusBadGateway)

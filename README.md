@@ -14,10 +14,8 @@ Go web application that shows an interactive map of fuel prices in Italy, using 
 ## Quick Start
 
 ```bash
-# Requires Go 1.21+
+# Requires Go 1.25+
 git clone ...
-cd carburanti
-go run .
 ```
 
 Then open: http://localhost:8080

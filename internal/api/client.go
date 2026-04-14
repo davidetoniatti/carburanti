@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,8 +19,11 @@ import (
 
 type StationProvider interface {
 	SearchZone(lat, lng float64, radius int) (*models.SearchResponse, error)
+	SearchZoneWithContext(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error)
 	GetServiceArea(id int) (*models.GasStation, error)
+	GetServiceAreaWithContext(ctx context.Context, id int) (*models.GasStation, error)
 	GetFuels() ([]models.FuelType, error)
+	GetFuelsWithContext(ctx context.Context) ([]models.FuelType, error)
 }
 
 type Client struct {
@@ -41,13 +45,13 @@ func NewClient(baseURL string, c *cache.Cache[any]) *Client {
 	}
 }
 
-func (c *Client) doRequest(method, url string, body []byte) ([]byte, error) {
+func (c *Client) doRequest(ctx context.Context, method, url string, body []byte) ([]byte, error) {
 	var bodyReader io.Reader
 	if body != nil {
 		bodyReader = bytes.NewReader(body)
 	}
 
-	req, err := http.NewRequest(method, url, bodyReader)
+	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +77,10 @@ func (c *Client) doRequest(method, url string, body []byte) ([]byte, error) {
 }
 
 func (c *Client) SearchZone(lat, lng float64, radius int) (*models.SearchResponse, error) {
+	return c.SearchZoneWithContext(context.Background(), lat, lng, radius)
+}
+
+func (c *Client) SearchZoneWithContext(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error) {
 	// Quantize coordinates to improve cache hits
 	// 4 decimals is approx 11m at equator, good enough for "same area"
 	qLat := math.Round(lat*10000) / 10000
@@ -96,7 +104,7 @@ func (c *Client) SearchZone(lat, lng float64, radius int) (*models.SearchRespons
 			return nil, err
 		}
 
-		respBody, err := c.doRequest("POST", c.BaseURL+"/search/zone", body)
+		respBody, err := c.doRequest(ctx, "POST", c.BaseURL+"/search/zone", body)
 		if err != nil {
 			return nil, err
 		}
@@ -117,6 +125,10 @@ func (c *Client) SearchZone(lat, lng float64, radius int) (*models.SearchRespons
 }
 
 func (c *Client) GetServiceArea(id int) (*models.GasStation, error) {
+	return c.GetServiceAreaWithContext(context.Background(), id)
+}
+
+func (c *Client) GetServiceAreaWithContext(ctx context.Context, id int) (*models.GasStation, error) {
 	cacheKey := fmt.Sprintf("station:%d", id)
 	if val, found := c.Cache.Get(cacheKey); found {
 		return val.(*models.GasStation), nil
@@ -125,7 +137,7 @@ func (c *Client) GetServiceArea(id int) (*models.GasStation, error) {
 	// Coalesce station detail requests too
 	res, err, _ := c.sfGroup.Do(cacheKey, func() (any, error) {
 		url := fmt.Sprintf("%s/registry/servicearea/%d", c.BaseURL, id)
-		respBody, err := c.doRequest("GET", url, nil)
+		respBody, err := c.doRequest(ctx, "GET", url, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -146,6 +158,10 @@ func (c *Client) GetServiceArea(id int) (*models.GasStation, error) {
 }
 
 func (c *Client) GetFuels() ([]models.FuelType, error) {
+	return c.GetFuelsWithContext(context.Background())
+}
+
+func (c *Client) GetFuelsWithContext(ctx context.Context) ([]models.FuelType, error) {
 	cacheKey := "fuels"
 	if val, found := c.Cache.Get(cacheKey); found {
 		return val.([]models.FuelType), nil
@@ -153,7 +169,7 @@ func (c *Client) GetFuels() ([]models.FuelType, error) {
 
 	res, err, _ := c.sfGroup.Do(cacheKey, func() (any, error) {
 		url := c.BaseURL + "/registry/fuels"
-		respBody, err := c.doRequest("GET", url, nil)
+		respBody, err := c.doRequest(ctx, "GET", url, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -192,8 +208,4 @@ func (c *Client) GetFuels() ([]models.FuelType, error) {
 		return nil, err
 	}
 	return res.([]models.FuelType), nil
-}
-
-func (c *Client) SendLogos() error {
-	return nil
 }

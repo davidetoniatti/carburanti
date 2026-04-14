@@ -3,9 +3,9 @@ package main
 import (
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 
 	"carburanti/internal/app"
 )
@@ -23,17 +23,12 @@ func TestSmoke_FullApp(t *testing.T) {
 	}
 	defer application.Close()
 
-	// Start it in a goroutine
-	port := ":9999"
-	go func() {
-		_ = application.Run(port)
-	}()
-
-	// Wait for start
-	time.Sleep(100 * time.Millisecond)
+	// Use httptest.NewServer to start the app on an ephemeral port
+	ts := httptest.NewServer(application.Handler())
+	defer ts.Close()
 
 	// Frontend serving
-	resp, err := http.Get("http://localhost:9999/")
+	resp, err := http.Get(ts.URL + "/")
 	if err != nil {
 		t.Fatalf("failed to fetch index: %v", err)
 	}
@@ -47,7 +42,7 @@ func TestSmoke_FullApp(t *testing.T) {
 	}
 
 	// API serving
-	resp2, err := http.Get("http://localhost:9999/api/fuels")
+	resp2, err := http.Get(ts.URL + "/api/fuels")
 	if err != nil {
 		t.Fatalf("failed to fetch fuels: %v", err)
 	}
