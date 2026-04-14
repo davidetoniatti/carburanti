@@ -83,7 +83,7 @@ body {
 .control-group { display: flex; flex-direction: column; gap: 2px; }
 .control-group label {
   font-family: 'Space Mono', monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -156,7 +156,7 @@ select {
   border: none;
   color: var(--text-muted);
   font-family: 'Space Mono', monospace;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.05em;
   padding: 6px 10px;
   cursor: pointer;
@@ -216,7 +216,7 @@ select {
   justify-content: space-between;
   padding: 0 16px;
   font-family: 'Space Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
   flex-shrink: 0;
   z-index: 1100;

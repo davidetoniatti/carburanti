@@ -75,6 +75,7 @@ function setupControls() {
     state.radius = parseInt(e.target.value);
     const c = state.map.getCenter();
     searchAt(c.lat, c.lng);
+    updateURL();
   });
 
   document.getElementById('locateBtn').addEventListener('click', () => {
@@ -95,6 +96,7 @@ function setupControls() {
   document.getElementById('langSelect').addEventListener('change', (e) => {
     state.lang = e.target.value;
     updateUILanguage();
+    updateURL();
   });
 
   document.getElementById('panelClose').addEventListener('click', closePanel);

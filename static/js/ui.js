@@ -83,7 +83,17 @@ function renderHours(hours) {
 function renderContactRow(labelKey, value, hrefPrefix = '') {
   if (!value) return '';
   const escaped = escapeHtml(value);
-  const link = hrefPrefix ? `<a href="${hrefPrefix}${escaped}">${escaped}</a>` : escaped;
+  let finalHref = hrefPrefix + escaped;
+  
+  // Normalize website links
+  if (labelKey === 'web' && !value.startsWith('http')) {
+    finalHref = 'https://' + value;
+  }
+
+  const link = (hrefPrefix || labelKey === 'web') 
+    ? `<a href="${finalHref}" target="_blank" rel="noopener">${escaped}</a>` 
+    : escaped;
+
   return `
     <div class="info-row">
       <span class="info-label">${t(labelKey)}</span>

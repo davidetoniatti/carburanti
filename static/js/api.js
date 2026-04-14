@@ -56,7 +56,14 @@ export async function searchStations(lat, lng, radius, fuelId, mode) {
 }
 
 export async function fetchStationDetails(id) {
-  const res = await fetch(`/api/station?id=${id}`);
+  if (state.detailAbortController) {
+    state.detailAbortController.abort();
+  }
+  state.detailAbortController = new AbortController();
+
+  const res = await fetch(`/api/station?id=${id}`, { 
+    signal: state.detailAbortController.signal 
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return await res.json();
 }

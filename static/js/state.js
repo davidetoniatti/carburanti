@@ -9,6 +9,7 @@ export const state = {
   selectedMarker: null,
   lang: 'en',
   searchAbortController: null,
+  detailAbortController: null,
   currentStationData: null,
   lastSearchCenter: null,
   lastSearchZoom: null,
