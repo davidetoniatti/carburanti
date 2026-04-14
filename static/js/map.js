@@ -88,17 +88,16 @@ export function syncMarkers() {
       if (el) {
         const markerInner = el.querySelector('.price-marker');
         if (markerInner) {
-          if (markerInner.style.color !== color || markerInner.querySelector('.marker-price').textContent !== priceText) {
-            markerInner.style.borderColor = color;
-            markerInner.style.color = color;
-            markerInner.querySelector('.marker-price').textContent = priceText;
+          if (markerInner.style.getPropertyValue('--marker-color') !== color) {
+            markerInner.style.setProperty('--marker-color', color);
           }
+          markerInner.querySelector('.marker-price').textContent = priceText;
         }
       }
     } else {
       const icon = L.divIcon({
         className: '',
-        html: `<div class="price-marker" style="border-color:${color};color:${color}" data-id="${sId}">
+        html: `<div class="price-marker" style="--marker-color:${color}" data-id="${sId}">
           <span class="marker-price">${priceText}</span>
         </div>`,
         iconAnchor: [24, 12],
@@ -124,26 +123,40 @@ export async function openStation(id, marker) {
   
   // Track known location from marker or state
   let knownLocation = null;
+  let targetMarker = marker;
+
   if (marker) {
     const ll = marker.getLatLng();
     knownLocation = { lat: ll.lat, lng: ll.lng };
   } else {
     const entry = state.markers.get(sId);
     if (entry) {
+      targetMarker = entry.marker;
       const ll = entry.marker.getLatLng();
       knownLocation = { lat: ll.lat, lng: ll.lng };
     }
   }
 
+  // Remove previous selection
   if (state.selectedMarker) {
-    const el = state.selectedMarker.getElement();
-    if (el) el.querySelector('.price-marker')?.classList.remove('selected');
+    const prevEl = state.selectedMarker.getElement();
+    if (prevEl) {
+      prevEl.querySelector('.price-marker')?.classList.remove('selected');
+    }
+    state.selectedMarker.setZIndexOffset(0);
   }
-  state.selectedMarker = marker;
-  if (marker) {
-    const el = marker.getElement();
-    if (el) el.querySelector('.price-marker')?.classList.add('selected');
+
+  // Set new selection
+  state.selectedMarker = targetMarker;
+  if (targetMarker) {
+    targetMarker.setZIndexOffset(1000);
+    const el = targetMarker.getElement();
+    if (el) {
+      el.querySelector('.price-marker')?.classList.add('selected');
+    }
   }
+  
+  document.getElementById('map').classList.add('has-selection');
   
   const panel = document.getElementById('panel');
   panel.classList.remove('hidden');
@@ -164,9 +177,15 @@ export async function openStation(id, marker) {
     
     addToHistory(station);
     
-    // If no marker was provided (history click), center the map if location is available
-    if (!marker && station.location) {
-      state.map.setView([station.location.lat, station.location.lng], 15);
+    // Smoothly fly to the station
+    if (station.location) {
+      const zoom = Math.max(state.map.getZoom(), 15);
+      // Small offset to the left if panel is open on desktop
+      const isDesktop = window.innerWidth > 900;
+      const offset = isDesktop ? 0.002 : 0;
+      state.map.flyTo([station.location.lat, station.location.lng - offset], zoom, {
+        duration: 0.8
+      });
     }
     
     renderPanel(station);

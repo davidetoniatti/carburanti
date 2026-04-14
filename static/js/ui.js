@@ -40,10 +40,13 @@ export function updateUILanguage() {
 
 export function closePanel() {
   document.getElementById('panel').classList.add('hidden');
+  document.getElementById('map').classList.remove('has-selection');
   state.currentStationData = null;
+
   if (state.selectedMarker) {
     const el = state.selectedMarker.getElement();
     if (el) el.querySelector('.price-marker')?.classList.remove('selected');
+    state.selectedMarker.setZIndexOffset(0);
     state.selectedMarker = null;
   }
 }
