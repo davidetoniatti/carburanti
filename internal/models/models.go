@@ -1,0 +1,78 @@
+package models
+
+type Location struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+}
+
+type Fuel struct {
+	ID            int     `json:"id"`
+	Price         float64 `json:"price"`
+	Name          string  `json:"name"`
+	FuelID        int     `json:"fuelId"`
+	IsSelf        bool    `json:"isSelf"`
+	ServiceAreaID int     `json:"serviceAreaId,omitempty"`
+	InsertDate    string  `json:"insertDate,omitempty"`
+	ValidityDate  string  `json:"validityDate,omitempty"`
+}
+
+type OpeningHours struct {
+	OrariAperturaID             int     `json:"orariAperturaId"`
+	GiornoSettimanaID           int     `json:"giornoSettimanaId"`
+	OraAperturaMattina          *string `json:"oraAperturaMattina"`
+	OraChiusuraMattina          *string `json:"oraChiusuraMattina"`
+	OraAperturaPomeriggio       *string `json:"oraAperturaPomeriggio"`
+	OraChiusuraPomeriggio       *string `json:"oraChiusuraPomeriggio"`
+	FlagOrarioContinuato        bool    `json:"flagOrarioContinuato"`
+	OraAperturaOrarioContinuato *string `json:"oraAperturaOrarioContinuato"`
+	OraChiusuraOrarioContinuato *string `json:"oraChiusuraOrarioContinuato"`
+	FlagH24                     bool    `json:"flagH24"`
+	FlagChiusura                bool    `json:"flagChiusura"`
+	FlagNonComunicato           bool    `json:"flagNonComunicato"`
+	FlagServito                 bool    `json:"flagServito"`
+	FlagSelf                    bool    `json:"flagSelf"`
+}
+
+type GasStation struct {
+	ID               int            `json:"id"`
+	Name             string         `json:"name"`
+	Fuels            []Fuel         `json:"fuels"`
+	Location         *Location      `json:"location,omitempty"`
+	InsertDate       string         `json:"insertDate,omitempty"`
+	Address          *string        `json:"address"`
+	Brand            string         `json:"brand"`
+	Distance         string         `json:"distance,omitempty"`
+	PhoneNumber      string         `json:"phoneNumber,omitempty"`
+	Email            string         `json:"email,omitempty"`
+	Website          string         `json:"website,omitempty"`
+	Company          string         `json:"company,omitempty"`
+	Services         []interface{}  `json:"services,omitempty"`
+	Hours            []OpeningHours `json:"orariapertura,omitempty"`
+	SelectedPrice    float64        `json:"selectedPrice,omitempty"`
+	SelectedFuelName string         `json:"selectedFuelName,omitempty"`
+}
+
+type SearchRequest struct {
+	Points []Location `json:"points"`
+	Radius int        `json:"radius"`
+}
+
+type SearchResponse struct {
+	Success bool         `json:"success"`
+	Center  Location     `json:"center"`
+	Results []GasStation `json:"results"`
+}
+
+type FuelType struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type FuelTypeResponse struct {
+	Results []FuelType `json:"results"`
+}
+
+type Logo struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}

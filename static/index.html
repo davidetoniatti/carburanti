@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="title">Fuel Prices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Bar -->
+    <header id="topbar">
+      <div id="logo-search-group">
+        <div id="logo">
+          <span class="logo-text">CARBU<em>RANTI</em></span>
+        </div>
+
+        <div class="control-group search-group">
+          <label data-i18n="search_label">SEARCH</label>
+          <div class="search-wrap">
+            <input type="text" id="addressSearch" data-i18n-placeholder="search_placeholder" placeholder="City or address...">
+            <button id="searchBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button id="filterToggle">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+      </button>
+
+      <div id="controls" class="mobile-hidden">
+        <div class="control-group">
+          <label data-i18n="fuel_label">FUEL TYPE</label>
+          <div class="select-wrap">
+            <select id="fuelSelect">
+              <option value="" data-i18n="loading">Loading...</option>
+            </select>
+          </div>
+        </div>
+        <div class="control-group">
+          <label data-i18n="mode_label">MODE</label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" data-mode="self" data-i18n="mode_self">Self</button>
+            <button class="toggle-btn" data-mode="served" data-i18n="mode_served">Served</button>
+            <button class="toggle-btn" data-mode="best" data-i18n="mode_best">Lowest</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <label data-i18n="radius_label">RADIUS (km)</label>
+          <div class="select-wrap">
+            <select id="radiusSelect">
+              <option value="2">2 km</option>
+              <option value="5" selected>5 km</option>
+              <option value="10">10 km</option>
+              <option value="20">20 km</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="control-group">
+          <label data-i18n="lang_label">LANG</label>
+          <div class="select-wrap">
+            <select id="langSelect">
+              <option value="en">EN</option>
+              <option value="it">IT</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Map -->
+    <div id="map-container">
+      <div id="map"></div>
+      <button id="locateBtn" data-i18n-title="locate_title" title="Use my position">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" stroke-dasharray="2 4"/></svg>
+      </button>
+    </div>
+
+    <!-- Status bar -->
+    <div id="statusbar">
+      <span id="statusText" data-i18n="status_initial">Click on the map or use localization to search for stations</span>
+      <span id="stationCount"></span>
+    </div>
+
+    <!-- Detail Panel -->
+    <div id="panel" class="hidden">
+      <button id="panelClose">x</button>
+      <div id="panelContent">
+        <div class="panel-loading">
+          <div class="spinner"></div>
+          <p data-i18n="loading_details">Loading details...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div id="legend">
+      <div class="legend-title" data-i18n="price_legend">PRICE EUR/L</div>
+      <div class="legend-scale">
+        <span class="legend-label" data-i18n="price_low">low</span>
+        <div class="legend-gradient"></div>
+        <span class="legend-label" data-i18n="price_high">high</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="js/app.js"></script>
+  </body>
+</html>
