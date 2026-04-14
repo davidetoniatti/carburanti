@@ -118,7 +118,7 @@ func (s *Server) calculateSelectedPrice(station *models.GasStation, fuelID int, 
 		if f.FuelID != fuelID {
 			continue
 		}
-		
+
 		isMatch := false
 		switch mode {
 		case "self":

@@ -52,9 +52,9 @@ func (c *NominatimClient) GeocodeWithContext(ctx context.Context, query, lang st
 	}
 
 	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
-		u := fmt.Sprintf("https://nominatim.openstreetmap.org/search?format=json&q=%s&countrycodes=it&limit=1", 
+		u := fmt.Sprintf("https://nominatim.openstreetmap.org/search?format=json&q=%s&countrycodes=it&limit=1",
 			url.QueryEscape(query))
-		
+
 		req, err := http.NewRequestWithContext(context.Background(), "GET", u, nil)
 		if err != nil {
 			return nil, err

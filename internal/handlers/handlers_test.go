@@ -184,10 +184,10 @@ func TestSearchHandler_CacheMutationReproduction(t *testing.T) {
 		t.Errorf("Expected Gasolio, got %s", res2.Results[0].SelectedFuelName)
 	}
 
-	// CHECK LEAKAGE: If we re-examine res1, it might have been mutated if the underlying 
+	// CHECK LEAKAGE: If we re-examine res1, it might have been mutated if the underlying
 	// sharedResponse was modified and res1 was just a reference to it.
 	// But in SearchHandler, it returns the same pointer it got from the client.
-	
+
 	if sharedResponse.Results[0].SelectedFuelName == "Gasolio" {
 		t.Errorf("BUG REPRODUCED: Shared response was mutated! It now has %s", sharedResponse.Results[0].SelectedFuelName)
 	}
@@ -218,7 +218,7 @@ func TestSearchHandler_Concurrency(t *testing.T) {
 	for i := 0; i < workers; i++ {
 		fuelID := (i % 2) + 1 // alternates between 1 and 2
 		expectedName := fmt.Sprintf("F%d", fuelID)
-		
+
 		go func(fid int, name string) {
 			path := fmt.Sprintf("/api/search?lat=41.0&lng=12.0&fuel=%d&mode=self", fid)
 			req := httptest.NewRequest("GET", path, nil)

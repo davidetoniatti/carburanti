@@ -141,6 +141,7 @@ export function renderPanel(station) {
       <div class="station-brand-badge">${escapeHtml(station.brand || t('nd'))}</div>
       <div class="station-name">${escapeHtml(station.name)}</div>
       <div class="station-address">${escapeHtml(addr)}</div>
+      <div class="station-id">${t("station_id")}: ${station.id}</div>
       ${latestDate ? `<div class="station-update">${t('last_update', { time: timeAgo(latestDate) })}</div>` : ''}
       ${station.company ? `<div class="station-company">${escapeHtml(station.company)}</div>` : ''}
       <div class="station-links">
