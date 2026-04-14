@@ -291,7 +291,7 @@ select {
 .legend-gradient { width: 80px; height: 6px; border-radius: 3px; background: linear-gradient(to right, #3ecf8e, #f5a623, #e8431a); }
 
 /* -- MARKERS -- */
-.price-marker { background: var(--surface); border: 2px solid; border-radius: 6px; padding: 2px 6px; font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+.price-marker { background: var(--surface); border: 2px solid; border-radius: 6px; padding: 1px 4px; font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,.4); width: 100%; height: 100%; }
 .price-marker.selected { transform: scale(1.15); border-width: 3px; z-index: 999 !important; }
 
 /* -- MOBILE RESPONSIVE -- */

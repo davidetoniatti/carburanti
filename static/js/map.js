@@ -97,11 +97,10 @@ export function syncMarkers() {
       const icon = L.divIcon({
         className: '',
         html: `<div class="price-marker" style="border-color:${color};color:${color}" data-id="${station.id}">
-          <span class="marker-name">${escapeHtml(shortName(station.name))}</span>
           <span class="marker-price">${priceText}</span>
         </div>`,
-        iconAnchor: [30, 20],
-        iconSize: [60, 36],
+        iconAnchor: [24, 12],
+        iconSize: [48, 24],
       });
       const marker = L.marker([station.location.lat, station.location.lng], { icon }).addTo(state.map);
       marker.on('click', () => openStation(station.id, marker));
