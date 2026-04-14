@@ -10,6 +10,7 @@ export const state = {
   lang: 'en',
   searchAbortController: null,
   detailAbortController: null,
+  searchRequestId: 0,
   currentStationData: null,
   lastSearchCenter: null,
   lastSearchZoom: null,

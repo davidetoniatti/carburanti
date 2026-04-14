@@ -2,7 +2,9 @@ package main
 
 import (
 	"embed"
-	"log"
+	"errors"
+	"log/slog"
+	"net/http"
 	"os"
 
 	"carburanti/internal/app"
@@ -12,6 +14,9 @@ import (
 var staticFiles embed.FS
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	baseURL := os.Getenv("CARBURANTI_API_URL")
 	if baseURL == "" {
 		baseURL = "https://carburanti.mise.gov.it/ospzApi"
@@ -19,7 +24,8 @@ func main() {
 
 	application, err := app.New(baseURL, staticFiles)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to create app", "error", err)
+		os.Exit(1)
 	}
 	defer application.Close()
 
@@ -28,7 +34,9 @@ func main() {
 		port = "8080"
 	}
 
-	if err := application.Run(":" + port); err != nil {
-		log.Fatal(err)
+	if err := application.Run(":" + port); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		slog.Error("server stopped with error", "error", err)
+		os.Exit(1)
 	}
+	slog.Info("server stopped gracefully")
 }

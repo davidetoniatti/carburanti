@@ -6,7 +6,7 @@ import (
 	"embed"
 	"io"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -30,6 +30,7 @@ func New(baseURL string, staticFiles embed.FS) (*App, error) {
 	mux.HandleFunc("/api/search", h.SearchHandler)
 	mux.HandleFunc("/api/station", h.StationHandler)
 	mux.HandleFunc("/api/fuels", h.FuelsHandler)
+	mux.HandleFunc("/api/geocode", h.GeocodeHandler)
 
 	sub, err := fs.Sub(staticFiles, "static")
 	if err != nil {
@@ -37,8 +38,8 @@ func New(baseURL string, staticFiles embed.FS) (*App, error) {
 	}
 	mux.Handle("/", http.FileServer(http.FS(sub)))
 
-	// Chain middlewares: Gzip -> CORS
-	handler := gzipMiddleware(corsMiddleware(mux))
+	// Chain middlewares: Gzip -> Cache-Control
+	handler := gzipMiddleware(cacheControlMiddleware(mux))
 
 	srv := &http.Server{
 		Handler:      handler,
@@ -55,7 +56,7 @@ func New(baseURL string, staticFiles embed.FS) (*App, error) {
 
 func (a *App) Run(addr string) error {
 	a.server.Addr = addr
-	log.Printf("Carburanti server running on http://localhost%s\n", addr)
+	slog.Info("server starting", "addr", addr)
 	return a.server.ListenAndServe()
 }
 
@@ -68,33 +69,28 @@ func (a *App) Close() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := a.server.Shutdown(ctx); err != nil {
-		log.Printf("Server shutdown error: %v", err)
+		slog.Error("server shutdown error", "error", err)
 	}
 }
 
-func corsMiddleware(next http.Handler) http.Handler {
+func cacheControlMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// For a same-origin app, we can be more restrictive. 
-		// If we really need CORS, we should at least not use "*" with credentials if needed later.
-		// For now, let's keep it simple but better than "*" if possible, 
-		// or just keep it as is if we want to allow embedding.
-		// The review suggested "no CORS if same-origin". 
-		// Since it is served from the same server, we can probably remove it or restrict it.
-		// Let's just remove the wide open "*" and only allow it if Origin matches our host if we really wanted to.
-		// Given the "hygiene" instruction, I'll remove the "*" header and only set it if needed.
-		// Actually, let's just make it a bit safer.
-		origin := r.Header.Get("Origin")
-		if origin != "" {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
+		start := time.Now()
+		
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+		} else if r.URL.Path == "/" || strings.HasSuffix(r.URL.Path, ".html") {
+			w.Header().Set("Cache-Control", "no-cache")
+		} else if strings.Contains(r.URL.Path, "/js/") || strings.Contains(r.URL.Path, "/css/") {
+			w.Header().Set("Cache-Control", "public, max-age=3600")
 		}
 		
-		if r.Method == http.MethodOptions {
-			w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
 		next.ServeHTTP(w, r)
+		
+		slog.Info("request handled", 
+			"method", r.Method, 
+			"path", r.URL.Path, 
+			"duration", time.Since(start))
 	})
 }
 
@@ -105,6 +101,15 @@ type gzipResponseWriter struct {
 
 func (w gzipResponseWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
+}
+
+func (w gzipResponseWriter) Flush() {
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		if gz, ok := w.Writer.(*gzip.Writer); ok {
+			gz.Flush()
+		}
+		f.Flush()
+	}
 }
 
 func gzipMiddleware(next http.Handler) http.Handler {

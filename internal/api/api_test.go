@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -141,4 +142,85 @@ func TestCache_Expiration(t *testing.T) {
 	if found {
 		t.Fatal("expected value to be expired")
 	}
+}
+
+func TestClient_SingleflightCoalescing(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		time.Sleep(100 * time.Millisecond) // Slow response to allow coalescing
+		resp := models.SearchResponse{Success: true}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	c := cache.New[any]()
+	client := NewClient(server.URL, c)
+
+	// Fire many concurrent requests
+	const workers = 50
+	errChan := make(chan error, workers)
+	for i := 0; i < workers; i++ {
+		go func() {
+			_, err := client.SearchZone(41.0, 12.0, 5)
+			errChan <- err
+		}()
+	}
+
+	for i := 0; i < workers; i++ {
+		if err := <-errChan; err != nil {
+			t.Errorf("request failed: %v", err)
+		}
+	}
+
+	if calls != 1 {
+		t.Errorf("expected only 1 upstream call, got %d", calls)
+	}
+}
+
+func TestClient_SingleflightCancellation(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(100 * time.Millisecond)
+		resp := models.SearchResponse{Success: true}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	c := cache.New[any]()
+	client := NewClient(server.URL, c)
+
+	ctx1, cancel1 := context.WithCancel(context.Background())
+	ctx2 := context.Background()
+
+	errChan := make(chan error, 2)
+	go func() {
+		_, err := client.SearchZoneWithContext(ctx1, 41.0, 12.0, 5)
+		errChan <- err
+	}()
+    
+	time.Sleep(20 * time.Millisecond)
+    
+	go func() {
+		_, err := client.SearchZoneWithContext(ctx2, 41.0, 12.0, 5)
+		errChan <- err
+	}()
+
+	time.Sleep(20 * time.Millisecond)
+	cancel1()
+
+	var errs []error
+	for i := 0; i < 2; i++ {
+		errs = append(errs, <-errChan)
+	}
+    
+    succeeded := 0
+    for _, e := range errs {
+        if e == nil {
+            succeeded++
+        }
+    }
+    
+    if succeeded != 1 {
+        t.Errorf("expected 1 success, got %d. Errs: %v", succeeded, errs)
+    }
 }

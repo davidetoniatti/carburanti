@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,10 +12,27 @@ import (
 )
 
 func TestSmoke_FullApp(t *testing.T) {
+	// Set up a mock upstream to avoid hitting the real network
+	mockUpstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/registry/fuels" {
+			resp := struct {
+				Results []map[string]string `json:"results"`
+			}{
+				Results: []map[string]string{
+					{"id": "1-x", "description": "Benzina"},
+				},
+			}
+			json.NewEncoder(w).Encode(resp)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer mockUpstream.Close()
+
 	// Set up a full app instance
 	baseURL := os.Getenv("CARBURANTI_API_URL")
 	if baseURL == "" {
-		baseURL = "https://carburanti.mise.gov.it/ospzApi"
+		baseURL = mockUpstream.URL
 	}
 
 	application, err := app.New(baseURL, staticFiles)

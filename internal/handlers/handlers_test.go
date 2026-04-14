@@ -13,9 +13,10 @@ import (
 )
 
 type mockStationProvider struct {
-	searchFunc func(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error)
-	fuelsFunc  func(ctx context.Context) ([]models.FuelType, error)
-	detailFunc func(ctx context.Context, id int) (*models.GasStation, error)
+	searchFunc  func(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error)
+	fuelsFunc   func(ctx context.Context) ([]models.FuelType, error)
+	detailFunc  func(ctx context.Context, id int) (*models.GasStation, error)
+	geocodeFunc func(ctx context.Context, query, lang string) (any, error)
 }
 
 func (m *mockStationProvider) SearchZone(lat, lng float64, radius int) (*models.SearchResponse, error) {
@@ -35,6 +36,12 @@ func (m *mockStationProvider) GetServiceArea(id int) (*models.GasStation, error)
 }
 func (m *mockStationProvider) GetServiceAreaWithContext(ctx context.Context, id int) (*models.GasStation, error) {
 	return m.detailFunc(ctx, id)
+}
+func (m *mockStationProvider) GeocodeWithContext(ctx context.Context, query, lang string) (any, error) {
+	if m.geocodeFunc == nil {
+		return []any{}, nil
+	}
+	return m.geocodeFunc(ctx, query, lang)
 }
 
 func TestSearchHandler_DeepValidation(t *testing.T) {

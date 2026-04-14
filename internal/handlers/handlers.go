@@ -2,12 +2,17 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"carburanti/internal/api"
 	"carburanti/internal/models"
+)
+
+const (
+	italyLatMin, italyLatMax = 35.0, 48.0
+	italyLngMin, italyLngMax = 6.0, 19.0
 )
 
 type Server struct {
@@ -37,12 +42,12 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	lat, err := strconv.ParseFloat(latStr, 64)
-	if err != nil || lat < 35 || lat > 48 {
+	if err != nil || lat < italyLatMin || lat > italyLatMax {
 		s.errorJSON(w, "invalid or out of range lat", http.StatusBadRequest)
 		return
 	}
 	lng, err := strconv.ParseFloat(lngStr, 64)
-	if err != nil || lng < 6 || lng > 19 {
+	if err != nil || lng < italyLngMin || lng > italyLngMax {
 		s.errorJSON(w, "invalid or out of range lng", http.StatusBadRequest)
 		return
 	}
@@ -64,7 +69,7 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 
 	result, err := s.Client.SearchZoneWithContext(r.Context(), lat, lng, radius)
 	if err != nil {
-		log.Printf("SearchZone error: %v", err)
+		slog.Error("SearchZone error", "error", err)
 		s.errorJSON(w, "upstream service error", http.StatusBadGateway)
 		return
 	}
@@ -89,8 +94,18 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 		Results: enrichedResults,
 	}
 
+	s.writeJSON(w, response)
+}
+
+func (s *Server) writeJSON(w http.ResponseWriter, data any) {
+	buf, err := json.Marshal(data)
+	if err != nil {
+		slog.Error("json.Marshal error", "error", err)
+		s.errorJSON(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	w.Write(buf)
 }
 
 func (s *Server) calculateSelectedPrice(station *models.GasStation, fuelID int, mode string) (float64, string) {
@@ -139,12 +154,11 @@ func (s *Server) StationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	station, err := s.Client.GetServiceAreaWithContext(r.Context(), id)
 	if err != nil {
-		log.Printf("GetServiceArea error: %v", err)
+		slog.Error("GetServiceArea error", "error", err)
 		s.errorJSON(w, "upstream service error", http.StatusBadGateway)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(station)
+	s.writeJSON(w, station)
 }
 
 func (s *Server) FuelsHandler(w http.ResponseWriter, r *http.Request) {
@@ -154,12 +168,34 @@ func (s *Server) FuelsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fuels, err := s.Client.GetFuelsWithContext(r.Context())
 	if err != nil {
-		log.Printf("GetFuels error: %v", err)
+		slog.Error("GetFuels error", "error", err)
 		s.errorJSON(w, "upstream service error", http.StatusBadGateway)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(fuels)
+	s.writeJSON(w, fuels)
+}
+
+func (s *Server) GeocodeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		s.errorJSON(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	q := r.URL.Query().Get("q")
+	if q == "" {
+		s.errorJSON(w, "query required", http.StatusBadRequest)
+		return
+	}
+
+	// For now we proxy to Nominatim. In a production app we might use our own provider.
+	// We use the client to perform the request so it can be cached or managed.
+	// Actually let's add Geocode to StationProvider.
+	results, err := s.Client.GeocodeWithContext(r.Context(), q, r.Header.Get("Accept-Language"))
+	if err != nil {
+		slog.Error("Geocode error", "error", err)
+		s.errorJSON(w, "geocoding service error", http.StatusBadGateway)
+		return
+	}
+	s.writeJSON(w, results)
 }
 
 func (s *Server) errorJSON(w http.ResponseWriter, message string, code int) {

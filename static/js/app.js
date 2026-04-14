@@ -44,6 +44,8 @@ async function loadFuels(defaultFuelId) {
     select.value = defaultFuelId;
   } else {
     state.selectedFuelId = state.fuels[0]?.id || 1;
+    select.value = state.selectedFuelId;
+    updateURL();
   }
 
   select.addEventListener('change', () => {
@@ -144,8 +146,17 @@ async function searchAt(lat, lng) {
   setStatus(t('searching'));
   const btn = document.getElementById('searchHereBtn');
   if (btn) btn.classList.add('hidden');
+  
+  const requestId = ++state.searchRequestId;
+  
   try {
     const data = await searchStations(lat, lng, state.radius, state.selectedFuelId, state.mode);
+    
+    if (requestId !== state.searchRequestId) {
+        console.log(`[Search] Ignoring stale result ${requestId} (current is ${state.searchRequestId})`);
+        return;
+    }
+
     state.stations = data.results || [];
     
     // Store search parameters for move throttling

@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -24,6 +25,7 @@ type StationProvider interface {
 	GetServiceAreaWithContext(ctx context.Context, id int) (*models.GasStation, error)
 	GetFuels() ([]models.FuelType, error)
 	GetFuelsWithContext(ctx context.Context) ([]models.FuelType, error)
+	GeocodeWithContext(ctx context.Context, query, lang string) (any, error)
 }
 
 type Client struct {
@@ -82,7 +84,6 @@ func (c *Client) SearchZone(lat, lng float64, radius int) (*models.SearchRespons
 
 func (c *Client) SearchZoneWithContext(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error) {
 	// Quantize coordinates to improve cache hits
-	// 4 decimals is approx 11m at equator, good enough for "same area"
 	qLat := math.Round(lat*10000) / 10000
 	qLng := math.Round(lng*10000) / 10000
 
@@ -94,7 +95,7 @@ func (c *Client) SearchZoneWithContext(ctx context.Context, lat, lng float64, ra
 	}
 
 	// Coalesce identical requests
-	res, err, _ := c.sfGroup.Do(cacheKey, func() (any, error) {
+	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
 		payload := models.SearchRequest{
 			Points: []models.Location{{Lat: lat, Lng: lng}},
 			Radius: radius,
@@ -104,7 +105,8 @@ func (c *Client) SearchZoneWithContext(ctx context.Context, lat, lng float64, ra
 			return nil, err
 		}
 
-		respBody, err := c.doRequest(ctx, "POST", c.BaseURL+"/search/zone", body)
+		// Use background context for the actual request so it's not canceled by the first caller
+		respBody, err := c.doRequest(context.Background(), "POST", c.BaseURL+"/search/zone", body)
 		if err != nil {
 			return nil, err
 		}
@@ -118,10 +120,15 @@ func (c *Client) SearchZoneWithContext(ctx context.Context, lat, lng float64, ra
 		return &searchRes, nil
 	})
 
-	if err != nil {
-		return nil, err
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case res := <-ch:
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		return res.Val.(*models.SearchResponse), nil
 	}
-	return res.(*models.SearchResponse), nil
 }
 
 func (c *Client) GetServiceArea(id int) (*models.GasStation, error) {
@@ -135,9 +142,9 @@ func (c *Client) GetServiceAreaWithContext(ctx context.Context, id int) (*models
 	}
 
 	// Coalesce station detail requests too
-	res, err, _ := c.sfGroup.Do(cacheKey, func() (any, error) {
+	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
 		url := fmt.Sprintf("%s/registry/servicearea/%d", c.BaseURL, id)
-		respBody, err := c.doRequest(ctx, "GET", url, nil)
+		respBody, err := c.doRequest(context.Background(), "GET", url, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -151,10 +158,15 @@ func (c *Client) GetServiceAreaWithContext(ctx context.Context, id int) (*models
 		return &station, nil
 	})
 
-	if err != nil {
-		return nil, err
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case res := <-ch:
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		return res.Val.(*models.GasStation), nil
 	}
-	return res.(*models.GasStation), nil
 }
 
 func (c *Client) GetFuels() ([]models.FuelType, error) {
@@ -167,9 +179,9 @@ func (c *Client) GetFuelsWithContext(ctx context.Context) ([]models.FuelType, er
 		return val.([]models.FuelType), nil
 	}
 
-	res, err, _ := c.sfGroup.Do(cacheKey, func() (any, error) {
+	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
 		url := c.BaseURL + "/registry/fuels"
-		respBody, err := c.doRequest(ctx, "GET", url, nil)
+		respBody, err := c.doRequest(context.Background(), "GET", url, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -204,8 +216,60 @@ func (c *Client) GetFuelsWithContext(ctx context.Context) ([]models.FuelType, er
 		return filtered, nil
 	})
 
-	if err != nil {
-		return nil, err
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case res := <-ch:
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		return res.Val.([]models.FuelType), nil
 	}
-	return res.([]models.FuelType), nil
+}
+
+func (c *Client) GeocodeWithContext(ctx context.Context, query, lang string) (any, error) {
+	cacheKey := fmt.Sprintf("geocode:%s:%s", query, lang)
+	if val, found := c.Cache.Get(cacheKey); found {
+		return val, nil
+	}
+
+	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
+		u := fmt.Sprintf("https://nominatim.openstreetmap.org/search?format=json&q=%s&countrycodes=it&limit=1", 
+			url.QueryEscape(query))
+		
+		req, err := http.NewRequestWithContext(context.Background(), "GET", u, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Accept-Language", lang)
+		req.Header.Set("User-Agent", "CarburantiApp/1.0")
+
+		resp, err := c.HTTPClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("nominatim returned %d", resp.StatusCode)
+		}
+
+		var results []any
+		if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
+			return nil, err
+		}
+
+		c.Cache.Set(cacheKey, results, 24*time.Hour)
+		return results, nil
+	})
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case res := <-ch:
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		return res.Val, nil
+	}
 }

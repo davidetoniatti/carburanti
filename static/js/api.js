@@ -45,7 +45,10 @@ export async function searchStations(lat, lng, radius, fuelId, mode) {
   
   const data = await res.json();
   
-  // Save to cache
+  // Save to cache (LRU behavior: delete then set to move to end)
+  if (searchCache.has(cacheKey)) {
+    searchCache.delete(cacheKey);
+  }
   searchCache.set(cacheKey, data);
   if (searchCache.size > MAX_CACHE_SIZE) {
     const firstKey = searchCache.keys().next().value;
@@ -69,7 +72,7 @@ export async function fetchStationDetails(id) {
 }
 
 export async function geocodeAddress(query, lang) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=it&limit=1`;
+  const url = `/api/geocode?q=${encodeURIComponent(query)}`;
   const res = await fetch(url, {
     headers: { 'Accept-Language': lang }
   });

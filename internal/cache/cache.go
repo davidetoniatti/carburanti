@@ -14,6 +14,7 @@ type Cache[T any] struct {
 	items  map[string]item[T]
 	mu     sync.RWMutex
 	stopCh chan struct{}
+	once   sync.Once
 }
 
 func New[T any]() *Cache[T] {
@@ -28,7 +29,7 @@ func New[T any]() *Cache[T] {
 func (c *Cache[T]) Set(key string, value T, duration time.Duration) {
 	var expiration int64
 	if duration > 0 {
-		expiration = time.Now().Add(duration).UnixNano()
+		expiration = time.Now().UnixNano() + duration.Nanoseconds()
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -40,21 +41,32 @@ func (c *Cache[T]) Set(key string, value T, duration time.Duration) {
 
 func (c *Cache[T]) Get(key string) (T, bool) {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
 	it, found := c.items[key]
 	if !found {
+		c.mu.RUnlock()
 		var zero T
 		return zero, false
 	}
 	if it.expiration > 0 && time.Now().UnixNano() > it.expiration {
+		c.mu.RUnlock()
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		// Double check after lock
+		it, found = c.items[key]
+		if found && it.expiration > 0 && time.Now().UnixNano() > it.expiration {
+			delete(c.items, key)
+		}
 		var zero T
 		return zero, false
 	}
+	c.mu.RUnlock()
 	return it.value, true
 }
 
 func (c *Cache[T]) Stop() {
-	close(c.stopCh)
+	c.once.Do(func() {
+		close(c.stopCh)
+	})
 }
 
 func (c *Cache[T]) janitor() {
