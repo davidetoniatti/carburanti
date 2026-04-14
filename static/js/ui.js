@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { t } from './i18n.js';
 import { escapeHtml, timeAgo } from './formatters.js';
+import { openStationById } from './app.js';
 
 export function setStatus(msg, count = '') {
   const statusText = document.getElementById('statusText');
@@ -23,7 +24,7 @@ export function updateUILanguage() {
     el.placeholder = t(key);
   });
   
-  if (state.stations.length === 0) {
+  if (state.stationsById.size === 0 && !state.lastSearchCenter) {
     setStatus(t('status_initial'));
   } else {
     const count = state.markers.size;
@@ -43,12 +44,12 @@ export function closePanel() {
   document.getElementById('map').classList.remove('has-selection');
   state.currentStationData = null;
 
-  if (state.selectedMarker) {
-    const el = state.selectedMarker.getElement();
-    if (el) el.querySelector('.price-marker')?.classList.remove('selected');
-    state.selectedMarker.setZIndexOffset(0);
-    state.selectedMarker = null;
+  if (state.selectedStationId && state.markers.has(state.selectedStationId)) {
+    const entry = state.markers.get(state.selectedStationId);
+    if (entry.el) entry.el.classList.remove('selected');
+    entry.marker.setZIndexOffset(0);
   }
+  state.selectedStationId = null;
 }
 
 export function toggleHistoryPanel() {
@@ -71,6 +72,8 @@ export function closeHistoryPanel() {
   document.getElementById('historyToggle').classList.remove('active');
 }
 
+let historyEventBound = false;
+
 export function renderHistory() {
   const list = document.getElementById('historyList');
   if (state.history.length === 0) {
@@ -86,29 +89,17 @@ export function renderHistory() {
     </li>
   `).join('');
   
-  list.querySelectorAll('.history-item').forEach(item => {
-    item.addEventListener('click', () => {
+  if (!historyEventBound) {
+    list.addEventListener('click', (e) => {
+      const item = e.target.closest('.history-item');
+      if (!item) return;
       const id = String(item.dataset.id);
       const historyEntry = state.history.find(h => String(h.id) === id);
-      
-      console.log(`[History] Clicking station ${id}`, historyEntry);
-
-      // Trigger opening the station on the map
-      const entry = state.markers.get(id);
-      if (entry) {
-        state.map.setView(entry.marker.getLatLng(), 15);
-        window.dispatchEvent(new CustomEvent('open-station', { detail: { id, marker: entry.marker } }));
-      } else if (historyEntry && historyEntry.location) {
-        // Force map centering even if marker doesn't exist
-        const loc = historyEntry.location;
-        state.map.setView([loc.lat, loc.lng], 15);
-        window.dispatchEvent(new CustomEvent('open-station', { detail: { id, location: loc } }));
-      } else {
-        window.dispatchEvent(new CustomEvent('open-station', { detail: { id } }));
-      }
+      openStationById(id, historyEntry?.location);
       closeHistoryPanel();
     });
-  });
+    historyEventBound = true;
+  }
 }
 
 function renderFuelCard(name, price, mode) {
@@ -165,36 +156,38 @@ function renderContactRow(labelKey, value, hrefPrefix = '') {
 }
 
 export function renderPanel(station) {
-  const fuelGroups = {};
+  const fuelMap = new Map();
+  let latestDate = null;
+  
   (station.fuels || []).forEach(f => {
     const key = f.name || 'Fuel';
-    if (!fuelGroups[key]) fuelGroups[key] = [];
-    fuelGroups[key].push(f);
-  });
-  
-  const fuelHtml = Object.entries(fuelGroups).map(([name, fuels]) => {
-    const selfFuels = fuels.filter(f => f.isSelf);
-    const servedFuels = fuels.filter(f => !f.isSelf);
-    let html = '';
-    if (selfFuels.length) {
-      const minSelf = Math.min(...selfFuels.map(f => f.price));
-      html += renderFuelCard(name, minSelf, 'SELF');
+    if (!fuelMap.has(key)) {
+      fuelMap.set(key, { selfMin: Infinity, servedMin: Infinity });
     }
-    if (servedFuels.length) {
-      const minServed = Math.min(...servedFuels.map(f => f.price));
-      html += renderFuelCard(name, minServed, 'SERVED');
+    const entry = fuelMap.get(key);
+    
+    if (f.isSelf && f.price < entry.selfMin) {
+      entry.selfMin = f.price;
+    } else if (!f.isSelf && f.price < entry.servedMin) {
+      entry.servedMin = f.price;
     }
-    return html;
-  }).join('');
-  
-  const addr = station.address || t('addr_not_available');
-  let latestDate = null;
-  (station.fuels || []).forEach(f => {
+    
     if (f.insertDate && (!latestDate || f.insertDate > latestDate)) {
       latestDate = f.insertDate;
     }
   });
   
+  let fuelHtml = '';
+  for (const [name, entry] of fuelMap.entries()) {
+    if (entry.selfMin !== Infinity) {
+      fuelHtml += renderFuelCard(name, entry.selfMin, 'SELF');
+    }
+    if (entry.servedMin !== Infinity) {
+      fuelHtml += renderFuelCard(name, entry.servedMin, 'SERVED');
+    }
+  }
+  
+  const addr = station.address || t('addr_not_available');
   const mapsUrl = station.location
     ? `https://www.openstreetmap.org/?mlat=${station.location.lat}&mlon=${station.location.lng}&zoom=17`
     : '#';

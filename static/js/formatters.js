@@ -35,11 +35,6 @@ export function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-export function shortName(name) {
-  if (!name) return '';
-  return name.length > 12 ? name.slice(0, 10) + '...' : name;
-}
-
 export function priceColor(price, minPrice, maxPrice) {
   if (minPrice === maxPrice) return '#f5a623';
   const v = (price - minPrice) / (maxPrice - minPrice);

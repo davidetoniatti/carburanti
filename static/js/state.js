@@ -1,25 +1,26 @@
 export const state = {
   map: null,
-  markers: new Map(), // stationId -> { marker, station }
-  stations: [],       // Current raw station data
+  markers: new Map(), // stationId -> { marker, el, priceEl, color, price }
+  stationsById: new Map(),
+  visibleStationIds: new Set(),
+  detailsCache: new Map(),
+  domRefs: {}, // For caching DOM elements if needed
   fuels: [],
   selectedFuelId: null,
   mode: 'self',       // 'self' | 'served' | 'best'
   radius: 5,
-  selectedMarker: null,
+  selectedStationId: null,
   lang: 'en',
-  searchAbortController: null,
-  detailAbortController: null,
-  searchRequestId: 0,
+  requests: {
+    searchAbortController: null,
+    detailAbortController: null,
+    searchRequestId: 0,
+  },
   currentStationData: null,
   lastSearchCenter: null,
   lastSearchZoom: null,
-  history: JSON.parse(localStorage.getItem('carburanti_history')) || []
+  history: []
 };
-
-export function saveHistory() {
-  localStorage.setItem('carburanti_history', JSON.stringify(state.history.slice(0, 10)));
-}
 
 export function addToHistory(station) {
   const sId = String(station.id);
@@ -36,7 +37,6 @@ export function addToHistory(station) {
   
   // Remove duplicate and keep latest 10
   state.history = [entry, ...state.history.filter(h => String(h.id) !== sId)].slice(0, 10);
-  saveHistory();
 }
 
 export function getStateFromURL() {

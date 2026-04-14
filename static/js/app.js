@@ -1,10 +1,12 @@
-import { state, getStateFromURL, updateURL } from './state.js';
+import { state, getStateFromURL, updateURL, addToHistory } from './state.js';
 import { translations, t } from './i18n.js';
-import { fetchFuels, searchStations, geocodeAddress } from './api.js';
-import { initMap, syncMarkers, openStation } from './map.js';
-import { updateUILanguage, setStatus, closePanel, toggleHistoryPanel, closeHistoryPanel } from './ui.js';
+import { fetchFuels, searchStations, geocodeAddress, fetchStationDetails } from './api.js';
+import { initMap, syncMarkers, selectMarker } from './map.js';
+import { updateUILanguage, setStatus, closePanel, toggleHistoryPanel, closeHistoryPanel, renderPanel } from './ui.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', bootstrapApp);
+
+async function bootstrapApp() {
   const browserLang = navigator.language.split('-')[0];
   if (translations[browserLang]) {
     state.lang = browserLang;
@@ -23,14 +25,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const startLng = urlState.lng || 12.4964;
   const startZoom = urlState.zoom || 13;
   
-  initMap(searchAt, [startLat, startLng], startZoom);
+  initMap(performSearch, openStationById, [startLat, startLng], startZoom);
   
   await loadFuels(urlState.fuel);
-  setupControls();
+  bindControls();
   
-  // Initial search
-  searchAt(startLat, startLng);
-});
+  performSearch(startLat, startLng);
+}
 
 async function loadFuels(defaultFuelId) {
   state.fuels = await fetchFuels();
@@ -51,12 +52,12 @@ async function loadFuels(defaultFuelId) {
   select.addEventListener('change', () => {
     state.selectedFuelId = parseInt(select.value);
     const c = state.map.getCenter();
-    searchAt(c.lat, c.lng);
+    performSearch(c.lat, c.lng);
     updateURL();
   });
 }
 
-function setupControls() {
+function bindControls() {
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     if (btn.dataset.mode === state.mode) {
         btn.classList.add('active');
@@ -68,7 +69,7 @@ function setupControls() {
       btn.classList.add('active');
       state.mode = btn.dataset.mode;
       const c = state.map.getCenter();
-      searchAt(c.lat, c.lng);
+      performSearch(c.lat, c.lng);
       updateURL();
     });
   });
@@ -76,7 +77,7 @@ function setupControls() {
   document.getElementById('radiusSelect').addEventListener('change', (e) => {
     state.radius = parseInt(e.target.value);
     const c = state.map.getCenter();
-    searchAt(c.lat, c.lng);
+    performSearch(c.lat, c.lng);
     updateURL();
   });
 
@@ -105,26 +106,6 @@ function setupControls() {
   document.getElementById('historyToggle').addEventListener('click', toggleHistoryPanel);
   document.getElementById('historyPanelClose').addEventListener('click', closeHistoryPanel);
 
-  window.addEventListener('open-station', async (e) => {
-    const { id, marker, location } = e.detail;
-    const sId = String(id);
-    if (marker) {
-      openStation(sId, marker);
-    } else {
-      const entry = state.markers.get(sId);
-      if (entry) {
-        state.map.setView(entry.marker.getLatLng(), 15);
-        openStation(sId, entry.marker);
-      } else {
-        if (location) {
-          await searchAt(location.lat, location.lng);
-        }
-        const newEntry = state.markers.get(sId);
-        openStation(sId, newEntry ? newEntry.marker : null);
-      }
-    }
-  });
-
   const filterToggle = document.getElementById('filterToggle');
   const controls = document.getElementById('controls');
   filterToggle.addEventListener('click', () => {
@@ -136,7 +117,7 @@ function setupControls() {
   if (searchHereBtn) {
     searchHereBtn.addEventListener('click', () => {
       const c = state.map.getCenter();
-      searchAt(c.lat, c.lng);
+      performSearch(c.lat, c.lng);
     });
   }
 
@@ -151,7 +132,7 @@ function setupControls() {
       if (data && data.length > 0) {
         const { lat, lon } = data[0];
         state.map.setView([lat, lon], 14);
-        searchAt(lat, lon);
+        performSearch(lat, lon);
       } else {
         setStatus(t('nd'));
       }
@@ -165,24 +146,22 @@ function setupControls() {
   });
 }
 
-async function searchAt(lat, lng) {
+export async function performSearch(lat, lng) {
   setStatus(t('searching'));
   const btn = document.getElementById('searchHereBtn');
   if (btn) btn.classList.add('hidden');
   
-  const requestId = ++state.searchRequestId;
-  
   try {
     const data = await searchStations(lat, lng, state.radius, state.selectedFuelId, state.mode);
     
-    if (requestId !== state.searchRequestId) {
-        console.log(`[Search] Ignoring stale result ${requestId} (current is ${state.searchRequestId})`);
-        return;
-    }
-
-    state.stations = data.results || [];
+    state.stationsById.clear();
+    state.visibleStationIds.clear();
     
-    // Store search parameters for move throttling
+    for (const s of (data.results || [])) {
+      state.stationsById.set(String(s.id), s);
+      state.visibleStationIds.add(String(s.id));
+    }
+    
     state.lastSearchCenter = L.latLng(lat, lng);
     state.lastSearchZoom = state.map ? state.map.getZoom() : null;
     
@@ -196,5 +175,47 @@ async function searchAt(lat, lng) {
   } catch (err) {
     if (err.name === 'AbortError') return;
     setStatus(t('error', { msg: err.message }));
+  }
+}
+
+export async function openStationById(id, knownLocation = null) {
+  const sId = String(id);
+  
+  selectMarker(sId);
+  
+  const panel = document.getElementById('panel');
+  panel.classList.remove('hidden');
+  document.getElementById('panelContent').innerHTML = `
+    <div class="panel-loading">
+      <div class="spinner"></div>
+      <p>${t('loading_details')}</p>
+    </div>`;
+    
+  try {
+    const station = await fetchStationDetails(sId);
+    state.currentStationData = station;
+    
+    if (!station.location && knownLocation) {
+      station.location = knownLocation;
+    } else if (!station.location && state.stationsById.has(sId)) {
+      station.location = state.stationsById.get(sId).location;
+    }
+    
+    addToHistory(station);
+    
+    if (station.location) {
+      const zoom = Math.max(state.map.getZoom(), 15);
+      const isDesktop = window.innerWidth > 900;
+      const offset = isDesktop ? 0.002 : 0;
+      state.map.flyTo([station.location.lat, station.location.lng - offset], zoom, {
+        duration: 0.8
+      });
+    }
+    
+    renderPanel(station);
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    document.getElementById('panelContent').innerHTML = `
+      <div class="panel-loading"><p>${t('error', { msg: err.message })}</p></div>`;
   }
 }

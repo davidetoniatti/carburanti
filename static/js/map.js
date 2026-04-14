@@ -1,12 +1,11 @@
-import { state, updateURL, addToHistory } from './state.js';
-import { t } from './i18n.js';
-import { priceColor, escapeHtml, shortName } from './formatters.js';
-import { fetchStationDetails, searchStations } from './api.js';
-import { renderPanel, setStatus } from './ui.js';
+import { state, updateURL } from './state.js';
+import { priceColor } from './formatters.js';
 
 let moveTimeout;
+let markerClickHandler = null;
 
-export function initMap(onSearch, center = [41.9028, 12.4964], zoom = 13) {
+export function initMap(onSearch, onMarkerClick, center = [41.9028, 12.4964], zoom = 13) {
+  markerClickHandler = onMarkerClick;
   state.map = L.map('map', {
     center: center,
     zoom: zoom,
@@ -15,6 +14,7 @@ export function initMap(onSearch, center = [41.9028, 12.4964], zoom = 13) {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
     maxZoom: 19,
+    referrerPolicy: 'strict-origin-when-cross-origin',
   }).addTo(state.map);
   
   state.map.on('click', (e) => {
@@ -27,7 +27,6 @@ export function initMap(onSearch, center = [41.9028, 12.4964], zoom = 13) {
       const center = state.map.getCenter();
       const zoom = state.map.getZoom();
 
-      // Check if move is significant (zoom change or center moved > 25% of view)
       let significant = false;
       if (state.lastSearchZoom !== zoom) {
         significant = true;
@@ -35,8 +34,6 @@ export function initMap(onSearch, center = [41.9028, 12.4964], zoom = 13) {
         const bounds = state.map.getBounds();
         const viewWidth = Math.abs(bounds.getEast() - bounds.getWest());
         const dist = center.distanceTo(state.lastSearchCenter);
-        // Approximate degrees to meters at 45 lat is roughly 111km, 
-        // but Leaflet distanceTo is in meters. View width in degrees to meters:
         const viewWidthMeters = viewWidth * 111320 * Math.cos(center.lat * Math.PI / 180);
         if (dist > viewWidthMeters * 0.25) {
           significant = true;
@@ -49,6 +46,7 @@ export function initMap(onSearch, center = [41.9028, 12.4964], zoom = 13) {
         const btn = document.getElementById('searchHereBtn');
         if (btn) btn.classList.remove('hidden');
       }
+      syncMarkers();
       updateURL();
     }, 250);
   });
@@ -59,40 +57,51 @@ export function initMap(onSearch, center = [41.9028, 12.4964], zoom = 13) {
 }
 
 export function syncMarkers() {
+  if (!state.map) return;
   const newStationIds = new Set();
-  const stationPrices = [];
-  const processedStations = [];
-
-  for (const s of state.stations) {
-    if (!s.location) continue;
+  
+  let minPrice = Infinity;
+  let maxPrice = -Infinity;
+  const renderable = [];
+  
+  const bounds = state.map.getBounds().pad(0.2);
+  
+  for (const s of state.stationsById.values()) {
+    if (!s.location || !s.selectedPrice) continue;
+    
+    if (!bounds.contains([s.location.lat, s.location.lng])) continue;
+    
     const price = s.selectedPrice;
-    if (!price) continue;
-    stationPrices.push(price);
-    processedStations.push({ station: s, price });
+    if (price < minPrice) minPrice = price;
+    if (price > maxPrice) maxPrice = price;
+    renderable.push({
+      id: String(s.id),
+      lat: s.location.lat,
+      lng: s.location.lng,
+      price: price
+    });
   }
 
-  const minPrice = stationPrices.length ? Math.min(...stationPrices) : 0;
-  const maxPrice = stationPrices.length ? Math.max(...stationPrices) : 0;
+  if (minPrice === Infinity) minPrice = 0;
+  if (maxPrice === -Infinity) maxPrice = 0;
 
-  for (const item of processedStations) {
-    const { station, price } = item;
-    const sId = String(station.id);
+  for (const item of renderable) {
+    const sId = item.id;
     newStationIds.add(sId);
-    const color = priceColor(price, minPrice, maxPrice);
-    const priceText = price.toFixed(3);
+    const color = priceColor(item.price, minPrice, maxPrice);
+    const priceText = item.price.toFixed(3);
 
     if (state.markers.has(sId)) {
       const entry = state.markers.get(sId);
-      entry.station = station;
-      const el = entry.marker.getElement();
-      if (el) {
-        const markerInner = el.querySelector('.price-marker');
-        if (markerInner) {
-          if (markerInner.style.getPropertyValue('--marker-color') !== color) {
-            markerInner.style.setProperty('--marker-color', color);
-          }
-          markerInner.querySelector('.marker-price').textContent = priceText;
+      if (entry.color !== color || entry.price !== priceText) {
+        if (entry.el) {
+          entry.el.style.setProperty('--marker-color', color);
         }
+        if (entry.priceEl) {
+          entry.priceEl.textContent = priceText;
+        }
+        entry.color = color;
+        entry.price = priceText;
       }
     } else {
       const icon = L.divIcon({
@@ -103,9 +112,23 @@ export function syncMarkers() {
         iconAnchor: [24, 12],
         iconSize: [48, 24],
       });
-      const marker = L.marker([station.location.lat, station.location.lng], { icon }).addTo(state.map);
-      marker.on('click', () => openStation(sId, marker));
-      state.markers.set(sId, { marker, station });
+      const marker = L.marker([item.lat, item.lng], { icon }).addTo(state.map);
+      
+      const root = marker.getElement();
+      let el = null;
+      let priceEl = null;
+      if (root) {
+        el = root.querySelector('.price-marker');
+        if (el) priceEl = el.querySelector('.marker-price');
+      }
+
+      const entry = { marker, el, priceEl, color, price: priceText };
+      
+      marker.on('click', () => {
+        if (markerClickHandler) markerClickHandler(sId);
+      });
+      
+      state.markers.set(sId, entry);
     }
   }
 
@@ -113,84 +136,35 @@ export function syncMarkers() {
     if (!newStationIds.has(String(id))) {
       entry.marker.remove();
       state.markers.delete(id);
-      if (state.selectedMarker === entry.marker) state.selectedMarker = null;
+      if (state.selectedStationId === id) state.selectedStationId = null;
     }
   }
 }
 
-export async function openStation(id, marker) {
+export function selectMarker(id) {
   const sId = String(id);
   
-  // Track known location from marker or state
-  let knownLocation = null;
-  let targetMarker = marker;
-
-  if (marker) {
-    const ll = marker.getLatLng();
-    knownLocation = { lat: ll.lat, lng: ll.lng };
-  } else {
-    const entry = state.markers.get(sId);
-    if (entry) {
-      targetMarker = entry.marker;
-      const ll = entry.marker.getLatLng();
-      knownLocation = { lat: ll.lat, lng: ll.lng };
-    }
-  }
-
   // Remove previous selection
-  if (state.selectedMarker) {
-    const prevEl = state.selectedMarker.getElement();
-    if (prevEl) {
-      prevEl.querySelector('.price-marker')?.classList.remove('selected');
+  if (state.selectedStationId && state.markers.has(state.selectedStationId)) {
+    const prevEntry = state.markers.get(state.selectedStationId);
+    if (prevEntry.el) {
+      prevEntry.el.classList.remove('selected');
     }
-    state.selectedMarker.setZIndexOffset(0);
+    prevEntry.marker.setZIndexOffset(0);
   }
 
   // Set new selection
-  state.selectedMarker = targetMarker;
-  if (targetMarker) {
-    targetMarker.setZIndexOffset(1000);
-    const el = targetMarker.getElement();
-    if (el) {
-      el.querySelector('.price-marker')?.classList.add('selected');
-    }
-  }
+  state.selectedStationId = sId;
+  const mapEl = document.getElementById('map');
   
-  document.getElementById('map').classList.add('has-selection');
-  
-  const panel = document.getElementById('panel');
-  panel.classList.remove('hidden');
-  document.getElementById('panelContent').innerHTML = `
-    <div class="panel-loading">
-      <div class="spinner"></div>
-      <p>${t('loading_details')}</p>
-    </div>`;
-    
-  try {
-    const station = await fetchStationDetails(sId);
-    state.currentStationData = station;
-    
-    // Merge known location if missing from details
-    if (!station.location && knownLocation) {
-      station.location = knownLocation;
+  if (sId && state.markers.has(sId)) {
+    const targetEntry = state.markers.get(sId);
+    targetEntry.marker.setZIndexOffset(1000);
+    if (targetEntry.el) {
+      targetEntry.el.classList.add('selected');
     }
-    
-    addToHistory(station);
-    
-    // Smoothly fly to the station
-    if (station.location) {
-      const zoom = Math.max(state.map.getZoom(), 15);
-      // Small offset to the left if panel is open on desktop
-      const isDesktop = window.innerWidth > 900;
-      const offset = isDesktop ? 0.002 : 0;
-      state.map.flyTo([station.location.lat, station.location.lng - offset], zoom, {
-        duration: 0.8
-      });
-    }
-    
-    renderPanel(station);
-  } catch (err) {
-    document.getElementById('panelContent').innerHTML = `
-      <div class="panel-loading"><p>${t('error', { msg: err.message })}</p></div>`;
+    if (mapEl) mapEl.classList.add('has-selection');
+  } else {
+    if (mapEl) mapEl.classList.remove('has-selection');
   }
 }
