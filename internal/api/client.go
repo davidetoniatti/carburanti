@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
+
+	"golang.org/x/sync/singleflight"
 
 	"carburanti/internal/cache"
 	"carburanti/internal/models"
@@ -23,6 +26,7 @@ type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
 	Cache      *cache.Cache[any]
+	sfGroup    singleflight.Group
 }
 
 var _ StationProvider = (*Client)(nil)
@@ -69,32 +73,47 @@ func (c *Client) doRequest(method, url string, body []byte) ([]byte, error) {
 }
 
 func (c *Client) SearchZone(lat, lng float64, radius int) (*models.SearchResponse, error) {
-	cacheKey := fmt.Sprintf("search:%f:%f:%d", lat, lng, radius)
+	// 1. Quantize coordinates to improve cache hits
+	// 4 decimals is approx 11m at equator, good enough for "same area"
+	qLat := math.Round(lat*10000) / 10000
+	qLng := math.Round(lng*10000) / 10000
+	
+	cacheKey := fmt.Sprintf("search:%f:%f:%d", qLat, qLng, radius)
+	
+	// 2. Check cache
 	if val, found := c.Cache.Get(cacheKey); found {
 		return val.(*models.SearchResponse), nil
 	}
 
-	payload := models.SearchRequest{
-		Points: []models.Location{{Lat: lat, Lng: lng}},
-		Radius: radius,
-	}
-	body, err := json.Marshal(payload)
+	// 3. Coalesce identical requests
+	res, err, _ := c.sfGroup.Do(cacheKey, func() (any, error) {
+		payload := models.SearchRequest{
+			Points: []models.Location{{Lat: lat, Lng: lng}},
+			Radius: radius,
+		}
+		body, err := json.Marshal(payload)
+		if err != nil {
+			return nil, err
+		}
+
+		respBody, err := c.doRequest("POST", c.BaseURL+"/search/zone", body)
+		if err != nil {
+			return nil, err
+		}
+
+		var searchRes models.SearchResponse
+		if err := json.Unmarshal(respBody, &searchRes); err != nil {
+			return nil, err
+		}
+
+		c.Cache.Set(cacheKey, &searchRes, 5*time.Minute)
+		return &searchRes, nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-
-	respBody, err := c.doRequest("POST", c.BaseURL+"/search/zone", body)
-	if err != nil {
-		return nil, err
-	}
-
-	var res models.SearchResponse
-	if err := json.Unmarshal(respBody, &res); err != nil {
-		return nil, err
-	}
-
-	c.Cache.Set(cacheKey, &res, 5*time.Minute)
-	return &res, nil
+	return res.(*models.SearchResponse), nil
 }
 
 func (c *Client) GetServiceArea(id int) (*models.GasStation, error) {
@@ -103,60 +122,76 @@ func (c *Client) GetServiceArea(id int) (*models.GasStation, error) {
 		return val.(*models.GasStation), nil
 	}
 
-	url := fmt.Sprintf("%s/registry/servicearea/%d", c.BaseURL, id)
-	respBody, err := c.doRequest("GET", url, nil)
+	// Coalesce station detail requests too
+	res, err, _ := c.sfGroup.Do(cacheKey, func() (any, error) {
+		url := fmt.Sprintf("%s/registry/servicearea/%d", c.BaseURL, id)
+		respBody, err := c.doRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		var station models.GasStation
+		if err := json.Unmarshal(respBody, &station); err != nil {
+			return nil, err
+		}
+
+		c.Cache.Set(cacheKey, &station, 10*time.Minute)
+		return &station, nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-
-	var res models.GasStation
-	if err := json.Unmarshal(respBody, &res); err != nil {
-		return nil, err
-	}
-
-	c.Cache.Set(cacheKey, &res, 10*time.Minute)
-	return &res, nil
+	return res.(*models.GasStation), nil
 }
 
 func (c *Client) GetFuels() ([]models.FuelType, error) {
-	if val, found := c.Cache.Get("fuels"); found {
+	cacheKey := "fuels"
+	if val, found := c.Cache.Get(cacheKey); found {
 		return val.([]models.FuelType), nil
 	}
 
-	url := c.BaseURL + "/registry/fuels"
-	respBody, err := c.doRequest("GET", url, nil)
+	res, err, _ := c.sfGroup.Do(cacheKey, func() (any, error) {
+		url := c.BaseURL + "/registry/fuels"
+		respBody, err := c.doRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		type rawFuelType struct {
+			ID          string `json:"id"`
+			Description string `json:"description"`
+		}
+		type rawFuelResponse struct {
+			Results []rawFuelType `json:"results"`
+		}
+
+		var fuelResp rawFuelResponse
+		if err := json.Unmarshal(respBody, &fuelResp); err != nil {
+			return nil, err
+		}
+
+		var filtered []models.FuelType
+		for _, f := range fuelResp.Results {
+			if len(f.ID) > 2 && f.ID[len(f.ID)-2:] == "-x" {
+				idStr := f.ID[:len(f.ID)-2]
+				if id, err := strconv.Atoi(idStr); err == nil {
+					filtered = append(filtered, models.FuelType{
+						ID:   id,
+						Name: f.Description,
+					})
+				}
+			}
+		}
+
+		c.Cache.Set(cacheKey, filtered, 24*time.Hour)
+		return filtered, nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-
-	type rawFuelType struct {
-		ID          string `json:"id"`
-		Description string `json:"description"`
-	}
-	type rawFuelResponse struct {
-		Results []rawFuelType `json:"results"`
-	}
-
-	var res rawFuelResponse
-	if err := json.Unmarshal(respBody, &res); err != nil {
-		return nil, err
-	}
-
-	var filtered []models.FuelType
-	for _, f := range res.Results {
-		if len(f.ID) > 2 && f.ID[len(f.ID)-2:] == "-x" {
-			idStr := f.ID[:len(f.ID)-2]
-			if id, err := strconv.Atoi(idStr); err == nil {
-				filtered = append(filtered, models.FuelType{
-					ID:   id,
-					Name: f.Description,
-				})
-			}
-		}
-	}
-
-	c.Cache.Set("fuels", filtered, 24*time.Hour)
-	return filtered, nil
+	return res.([]models.FuelType), nil
 }
 
 func (c *Client) SendLogos() error {
