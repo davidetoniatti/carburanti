@@ -2,14 +2,18 @@ import { state, getStateFromURL, updateURL, addToHistory } from './state.js';
 import { hasLocale, t } from './i18n.js';
 import { fetchFuels, searchStations, geocodeAddress, fetchStationDetails } from './api.js';
 import { initMap, syncMarkers, selectMarker } from './map.js';
-import { updateUILanguage, closePanel, toggleHistoryPanel, closeHistoryPanel, renderPanel, showToast } from './ui.js';
+import { updateUILanguage, closePanel, toggleHistoryPanel, closeHistoryPanel, renderPanel, showToast, bindHistoryEvents } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', bootstrapApp);
 
-const DEFAULT_ZOOM = 15;
-const DEFAULT_LAT  = 41.9028; // Rome
-const DEFAULT_LNG  = 12.4964;
-const GEO_TIMEOUT_MS = 10_000;
+const DEFAULT_ZOOM        = 15;
+const DEFAULT_LAT         = 41.9028; // Rome
+const DEFAULT_LNG         = 12.4964;
+const GEO_TIMEOUT_MS      = 10_000;
+const FLY_DURATION_S      = 0.8;
+const DESKTOP_BREAKPOINT  = 900;
+const SUGGESTIONS_DEBOUNCE_MS = 400;
+const MIN_ADDRESS_QUERY_LENGTH = 3;
 
 async function bootstrapApp() {
   const browserLang = navigator.language.split('-')[0];
@@ -32,6 +36,7 @@ async function bootstrapApp() {
 
   await loadFuels(urlState.fuel);
   bindControls();
+  bindHistoryEvents();
   performSearch(startLat, startLng);
 }
 
@@ -100,6 +105,12 @@ function bindControls() {
   bindAddressSearch();
 }
 
+function resetSearchUI() {
+  closePanel();
+  closeHistoryPanel();
+  document.getElementById('searchSuggestions').classList.add('hidden');
+}
+
 function bindAddressSearch() {
   const addressInput  = document.getElementById('addressSearch');
   const searchBtn     = document.getElementById('searchBtn');
@@ -108,7 +119,7 @@ function bindAddressSearch() {
 
   addressInput.addEventListener('input', () => {
     clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => showSuggestions(addressInput, suggestionsBox), 400);
+    debounceTimeout = setTimeout(() => showSuggestions(addressInput, suggestionsBox), SUGGESTIONS_DEBOUNCE_MS);
   });
 
   suggestionsBox.addEventListener('click', (e) => {
@@ -117,11 +128,9 @@ function bindAddressSearch() {
     const lat = parseFloat(item.dataset.lat);
     const lon = parseFloat(item.dataset.lon);
     addressInput.value = item.textContent.trim();
-    suggestionsBox.classList.add('hidden');
     state.map.setView([lat, lon], DEFAULT_ZOOM);
     performSearch(lat, lon);
-    closePanel();
-    closeHistoryPanel();
+    resetSearchUI();
   });
 
   document.addEventListener('click', (e) => {
@@ -131,9 +140,7 @@ function bindAddressSearch() {
   const doSearch = async () => {
     const query = addressInput.value.trim();
     if (!query) return;
-    closePanel();
-    closeHistoryPanel();
-    suggestionsBox.classList.add('hidden');
+    resetSearchUI();
     try {
       const data = await geocodeAddress(query, state.lang);
       if (data?.length > 0) {
@@ -154,7 +161,7 @@ function bindAddressSearch() {
 
 async function showSuggestions(input, box) {
   const query = input.value.trim();
-  if (query.length < 3) { box.classList.add('hidden'); return; }
+  if (query.length < MIN_ADDRESS_QUERY_LENGTH) { box.classList.add('hidden'); return; }
   try {
     const results = await geocodeAddress(query, state.lang);
     if (results?.length > 0) {
@@ -188,49 +195,66 @@ export async function performSearch(lat, lng) {
   }
 }
 
-export async function openStationById(id, knownLocation = null, forceSearch = false) {
-  const sId = String(id);
-  selectMarker(sId);
-
-  const panel = document.getElementById('panel');
-  panel.classList.remove('hidden');
+function showPanelLoading() {
+  document.getElementById('panel').classList.remove('hidden');
   document.getElementById('panelContent').innerHTML = `
     <div class="panel-loading">
       <div class="spinner"></div>
       <p>${t('loading_details')}</p>
     </div>`;
+}
 
-  try {
-    const station = await fetchStationDetails(sId);
-    state.currentStationData = station;
+function showPanelError(message) {
+  document.getElementById('panelContent').innerHTML =
+    `<div class="panel-loading"><p>${t('error', { msg: message })}</p></div>`;
+}
 
-    // Resolve location from fallbacks if API didn't return one
-    station.location ??= knownLocation ?? state.stationsById.get(sId)?.location;
+function resolveStationLocation(station, knownLocation) {
+  return station.location ?? knownLocation ?? state.stationsById.get(String(station.id))?.location ?? null;
+}
 
-    addToHistory(station);
+async function ensureStationVisible(station, forceSearch) {
+  const sId = String(station.id);
+  if (!station.location) return;
 
-    if ((forceSearch || !state.markers.has(sId)) && station.location) {
-      await performSearch(station.location.lat, station.location.lng);
-      selectMarker(sId);
-    }
-
-    _centerMapOnStation(station);
-    renderPanel(station);
-  } catch (err) {
-    if (err.name === 'AbortError') return;
-    document.getElementById('panelContent').innerHTML =
-      `<div class="panel-loading"><p>${t('error', { msg: err.message })}</p></div>`;
+  if (forceSearch || !state.markers.has(sId)) {
+    await performSearch(station.location.lat, station.location.lng);
+    selectMarker(sId);
   }
 }
 
-const FLY_DURATION_S      = 0.8;
-const DESKTOP_BREAKPOINT  = 900;
-const PANEL_LNG_OFFSET    = 0.002; // rough degree offset to uncenter map from behind panel
-
-function _centerMapOnStation(station) {
+function focusMapOnStation(station) {
   if (!station.location) return;
+
   const { lat, lng } = station.location;
   const zoom = Math.max(state.map.getZoom(), DEFAULT_ZOOM);
-  const lngOffset = window.innerWidth > DESKTOP_BREAKPOINT ? PANEL_LNG_OFFSET : 0;
-  state.map.flyTo([lat, lng - lngOffset], zoom, { duration: FLY_DURATION_S });
+
+  if (window.innerWidth > DESKTOP_BREAKPOINT) {
+    const panelWidth = document.getElementById('panel')?.offsetWidth ?? 0;
+    state.map.flyTo([lat, lng], zoom, { duration: FLY_DURATION_S });
+    return;
+  }
+
+  state.map.flyTo([lat, lng], zoom, { duration: FLY_DURATION_S });
+}
+
+export async function openStationById(id, knownLocation = null, forceSearch = false) {
+  const sId = String(id);
+  selectMarker(sId);
+  showPanelLoading();
+
+  try {
+    const station = await fetchStationDetails(sId);
+    station.location = resolveStationLocation(station, knownLocation);
+    state.currentStationData = station;
+
+    addToHistory(station);
+    await ensureStationVisible(station, forceSearch);
+
+    focusMapOnStation(station);
+    renderPanel(station);
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    showPanelError(err.message);
+  }
 }

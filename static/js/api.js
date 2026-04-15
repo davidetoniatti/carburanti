@@ -1,39 +1,56 @@
 import { state } from './state.js';
 
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const SEARCH_CACHE_SIZE = 20;
+const DETAILS_CACHE_SIZE = 100;
 
 class TTLCache {
-  constructor(maxSize) {
+  constructor(maxSize, ttlMs = CACHE_TTL_MS) {
     this.cache = new Map();
     this.maxSize = maxSize;
+    this.ttlMs = ttlMs;
   }
 
   get(key) {
     const entry = this.cache.get(key);
     if (!entry) return undefined;
+
     if (Date.now() > entry.expiresAt) {
       this.cache.delete(key);
       return undefined;
     }
-    // Refresh LRU
+
     this.cache.delete(key);
     this.cache.set(key, entry);
-    return entry;
+    return entry.value;
   }
 
-  set(key, promise) {
+  set(key, value) {
     if (this.cache.has(key)) {
       this.cache.delete(key);
     } else if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      const oldestKey = this.cache.keys().next().value;
+      this.cache.delete(oldestKey);
     }
-    this.cache.set(key, { promise, expiresAt: Date.now() + CACHE_TTL_MS });
+
+    this.cache.set(key, {
+      value,
+      expiresAt: Date.now() + this.ttlMs,
+    });
+  }
+
+  delete(key) {
+    this.cache.delete(key);
+  }
+
+  clear() {
+    this.cache.clear();
   }
 }
 
-const searchCache = new TTLCache(20);
-const detailPromises = new Map(); // In-flight detail requests deduplication
+const searchCache = new TTLCache(SEARCH_CACHE_SIZE);
+const detailsCache = new TTLCache(DETAILS_CACHE_SIZE);
+const detailPromises = new Map();
 
 function getQuantizedKey(lat, lng, radius, fuelId) {
   const qLat = Math.round(lat * 10000) / 10000;
@@ -47,7 +64,7 @@ export async function fetchFuels() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error("fetchFuels error:", err);
+    console.error('fetchFuels error:', err);
     return [
       { id: 1, name: 'Benzina' },
       { id: 2, name: 'Gasolio' },
@@ -60,77 +77,69 @@ export async function fetchFuels() {
 
 export function searchStations(lat, lng, radius, fuelId) {
   const cacheKey = getQuantizedKey(lat, lng, radius, fuelId);
-  
   const cached = searchCache.get(cacheKey);
+
   if (cached) {
-    return cached.promise;
+    return cached;
   }
 
-  if (state.requests.searchAbortController) {
-    state.requests.searchAbortController.abort();
-  }
+  state.requests.searchAbortController?.abort();
   state.requests.searchAbortController = new AbortController();
-  const signal = state.requests.searchAbortController.signal;
-  
-  const url = `/api/search?lat=${lat}&lng=${lng}&radius=${radius}&fuel=${fuelId}`;
-  const promise = fetch(url, { signal })
-    .then(res => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    });
+
+  const promise = fetch(
+    `/api/search?lat=${lat}&lng=${lng}&radius=${radius}&fuel=${fuelId}`,
+    { signal: state.requests.searchAbortController.signal }
+  ).then((res) => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  });
 
   searchCache.set(cacheKey, promise);
   return promise;
 }
 
 export function fetchStationDetails(id) {
-  const sId = String(id);
-  
-  // Check details cache in state
-  if (state.detailsCache.has(sId)) {
-    const entry = state.detailsCache.get(sId);
-    if (Date.now() <= entry.expiresAt) {
-      return Promise.resolve(entry.data);
-    } else {
-      state.detailsCache.delete(sId);
-    }
+  const stationId = String(id);
+
+  const cached = detailsCache.get(stationId);
+  if (cached) {
+    return Promise.resolve(cached);
   }
 
-  // Deduplicate in-flight requests
-  if (detailPromises.has(sId)) {
-    return detailPromises.get(sId);
+  if (detailPromises.has(stationId)) {
+    return detailPromises.get(stationId);
   }
 
-  if (state.requests.detailAbortController) {
-    state.requests.detailAbortController.abort();
-  }
+  state.requests.detailAbortController?.abort();
   state.requests.detailAbortController = new AbortController();
-  const signal = state.requests.detailAbortController.signal;
 
-  const promise = fetch(`/api/station?id=${id}`, { signal })
-    .then(res => {
+  const promise = fetch(`/api/station?id=${id}`, {
+    signal: state.requests.detailAbortController.signal,
+  })
+    .then((res) => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     })
-    .then(data => {
-      state.detailsCache.set(sId, { data, expiresAt: Date.now() + CACHE_TTL_MS });
-      detailPromises.delete(sId);
+    .then((data) => {
+      detailsCache.set(stationId, data);
+      detailPromises.delete(stationId);
       return data;
     })
-    .catch(err => {
-      detailPromises.delete(sId);
+    .catch((err) => {
+      detailPromises.delete(stationId);
       throw err;
     });
 
-  detailPromises.set(sId, promise);
+  detailPromises.set(stationId, promise);
   return promise;
 }
 
 export async function geocodeAddress(query, lang) {
   const url = `/api/geocode?q=${encodeURIComponent(query)}`;
   const res = await fetch(url, {
-    headers: { 'Accept-Language': lang }
+    headers: { 'Accept-Language': lang },
   });
+
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return await res.json();
 }

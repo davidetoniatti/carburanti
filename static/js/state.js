@@ -1,8 +1,7 @@
 export const state = {
   map: null,
-  markers: new Map(), // stationId -> { marker, el, priceEl, color, price }
+  markers: new Map(),
   stationsById: new Map(),
-  detailsCache: new Map(),
   fuels: [],
   selectedFuelId: null,
   radius: 5,
@@ -15,48 +14,58 @@ export const state = {
   currentStationData: null,
   lastSearchCenter: null,
   lastSearchZoom: null,
-  history: []
+  history: [],
 };
 
+const MAX_HISTORY_SIZE = 10;
+
 export function addToHistory(station) {
-  const sId = String(station.id);
-  const existing = state.history.find(h => String(h.id) === sId);
-  
-  const entry = {
-    id: sId,
-    name: station.name || existing?.name,
-    brand: station.brand || existing?.brand,
-    address: station.address || existing?.address,
-    location: station.location || existing?.location,
-    timestamp: Date.now()
+  const stationId = String(station.id);
+  const previous = state.history.find((item) => String(item.id) === stationId);
+
+  const nextEntry = {
+    id: stationId,
+    name: station.name || previous?.name,
+    brand: station.brand || previous?.brand,
+    address: station.address || previous?.address,
+    location: station.location || previous?.location,
+    timestamp: Date.now(),
   };
-  
-  // Remove duplicate and keep latest 10
-  state.history = [entry, ...state.history.filter(h => String(h.id) !== sId)].slice(0, 10);
+
+  state.history = [
+    nextEntry,
+    ...state.history.filter((item) => String(item.id) !== stationId),
+  ].slice(0, MAX_HISTORY_SIZE);
 }
 
 export function getStateFromURL() {
   const params = new URLSearchParams(window.location.search);
+
   return {
     lat: parseFloat(params.get('lat')),
     lng: parseFloat(params.get('lng')),
-    zoom: parseInt(params.get('zoom')),
-    fuel: parseInt(params.get('fuel')),
-    radius: parseInt(params.get('radius'))
+    zoom: parseInt(params.get('zoom'), 10),
+    fuel: parseInt(params.get('fuel'), 10),
+    radius: parseInt(params.get('radius'), 10),
   };
 }
 
 export function updateURL() {
   const params = new URLSearchParams();
+
   if (state.map) {
     const center = state.map.getCenter();
     params.set('lat', center.lat.toFixed(6));
     params.set('lng', center.lng.toFixed(6));
     params.set('zoom', state.map.getZoom());
   }
-  if (state.selectedFuelId) params.set('fuel', state.selectedFuelId);
+
+  if (state.selectedFuelId) {
+    params.set('fuel', state.selectedFuelId);
+  }
+
   params.set('radius', state.radius);
-  
-  const newRelativePathQuery = window.location.pathname + '?' + params.toString();
+
+  const newRelativePathQuery = `${window.location.pathname}?${params.toString()}`;
   window.history.replaceState(null, '', newRelativePathQuery);
 }

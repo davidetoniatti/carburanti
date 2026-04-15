@@ -75,34 +75,34 @@ export function closeHistoryPanel() {
   document.getElementById('historyToggle').classList.remove('active');
 }
 
-let historyEventBound = false;
+export function bindHistoryEvents() {
+  document.getElementById('historyList').addEventListener('click', (e) => {
+    const item = e.target.closest('.history-item');
+    if (!item) return;
+
+    const id = String(item.dataset.id);
+    const historyEntry = state.history.find(entry => String(entry.id) === id);
+
+    openStationById(id, historyEntry?.location, true);
+    closeHistoryPanel();
+  });
+}
 
 export function renderHistory() {
   const list = document.getElementById('historyList');
+
   if (state.history.length === 0) {
     list.innerHTML = `<li class="empty-msg">${t('no_history')}</li>`;
     return;
   }
-  
-  list.innerHTML = state.history.map(h => `
-    <li class="history-item" data-id="${h.id}">
-      <div class="history-item-brand">${escapeHtml(h.brand || t('nd'))}</div>
-      <div class="history-item-name">${escapeHtml(h.name)}</div>
-      <div class="history-item-address">${escapeHtml(h.address)}</div>
+
+  list.innerHTML = state.history.map(entry => `
+    <li class="history-item" data-id="${entry.id}">
+      <div class="history-item-brand">${entry.brand ? escapeHtml(entry.brand) : t('nd')}</div>
+      <div class="history-item-name">${escapeHtml(entry.name || t('nd'))}</div>
+      <div class="history-item-address">${escapeHtml(entry.address || t('addr_not_available'))}</div>
     </li>
   `).join('');
-  
-  if (!historyEventBound) {
-    list.addEventListener('click', (e) => {
-      const item = e.target.closest('.history-item');
-      if (!item) return;
-      const id = String(item.dataset.id);
-      const historyEntry = state.history.find(h => String(h.id) === id);
-      openStationById(id, historyEntry?.location, true);
-      closeHistoryPanel();
-    });
-    historyEventBound = true;
-  }
 }
 
 function renderFuelRow(name, selfPrice, servedPrice) {
