@@ -3,6 +3,7 @@ import { hasLocale, t } from './i18n.js';
 import { fetchFuels, searchStations, geocodeAddress, fetchStationDetails } from './api.js';
 import { initMap, syncMarkers, selectMarker } from './map.js';
 import { updateUILanguage, closePanel, toggleHistoryPanel, closeHistoryPanel, renderPanel, showToast, bindHistoryEvents } from './ui.js';
+import { initBottomSheet } from './bottomSheet.js';
 
 document.addEventListener('DOMContentLoaded', bootstrapApp);
 
@@ -37,6 +38,8 @@ async function bootstrapApp() {
   await loadFuels(urlState.fuel);
   bindControls();
   bindHistoryEvents();
+  initBottomSheet('panel');
+  initBottomSheet('historyPanel');
   performSearch(startLat, startLng);
 }
 
@@ -89,6 +92,9 @@ function bindControls() {
   document.getElementById('panelClose').addEventListener('click', closePanel);
   document.getElementById('historyToggle').addEventListener('click', toggleHistoryPanel);
   document.getElementById('historyPanelClose').addEventListener('click', closeHistoryPanel);
+
+  document.getElementById('panel').addEventListener('sheetClosed', closePanel);
+  document.getElementById('historyPanel').addEventListener('sheetClosed', closeHistoryPanel);
 
   const filterToggle = document.getElementById('filterToggle');
   const controls     = document.getElementById('controls');
@@ -196,7 +202,9 @@ export async function performSearch(lat, lng) {
 }
 
 function showPanelLoading() {
-  document.getElementById('panel').classList.remove('hidden');
+  const panel = document.getElementById('panel');
+  panel.classList.remove('hidden');
+  if (window.innerWidth <= DESKTOP_BREAKPOINT) panel.classList.add('peek');
   document.getElementById('panelContent').innerHTML = `
     <div class="panel-loading">
       <div class="spinner"></div>

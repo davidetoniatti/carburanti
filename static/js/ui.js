@@ -43,7 +43,9 @@ export function showToast(msg, type = 'info') {
 }
 
 export function closePanel() {
-  document.getElementById('panel').classList.add('hidden');
+  const panel = document.getElementById('panel');
+  panel.classList.add('hidden');
+  panel.classList.remove('peek', 'full');
   document.getElementById('map').classList.remove('has-selection');
   state.currentStationData = null;
 
@@ -64,6 +66,7 @@ export function toggleHistoryPanel() {
     closePanel();
     renderHistory();
     panel.classList.remove('hidden');
+    if (window.innerWidth <= 900) panel.classList.add('peek');
     btn.classList.add('active');
   } else {
     closeHistoryPanel();
@@ -71,7 +74,9 @@ export function toggleHistoryPanel() {
 }
 
 export function closeHistoryPanel() {
-  document.getElementById('historyPanel').classList.add('hidden');
+  const panel = document.getElementById('historyPanel');
+  panel.classList.add('hidden');
+  panel.classList.remove('peek', 'full');
   document.getElementById('historyToggle').classList.remove('active');
 }
 
