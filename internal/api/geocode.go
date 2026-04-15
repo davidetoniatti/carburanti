@@ -52,7 +52,8 @@ func (c *NominatimClient) GeocodeWithContext(ctx context.Context, query, lang st
 	}
 
 	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
-		u := fmt.Sprintf("https://nominatim.openstreetmap.org/search?format=json&q=%s&countrycodes=it&limit=1",
+		// Increase limit to 5 to support suggestions
+		u := fmt.Sprintf("https://nominatim.openstreetmap.org/search?format=json&q=%s&countrycodes=it&limit=5",
 			url.QueryEscape(query))
 
 		req, err := http.NewRequestWithContext(context.Background(), "GET", u, nil)

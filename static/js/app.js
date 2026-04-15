@@ -6,6 +6,8 @@ import { updateUILanguage, setStatus, closePanel, toggleHistoryPanel, closeHisto
 
 document.addEventListener('DOMContentLoaded', bootstrapApp);
 
+const defaultZoom = 17;
+
 async function bootstrapApp() {
   const browserLang = navigator.language.split('-')[0];
   if (translations[browserLang]) {
@@ -22,7 +24,7 @@ async function bootstrapApp() {
   
   const startLat = urlState.lat || 41.9028;
   const startLng = urlState.lng || 12.4964;
-  const startZoom = urlState.zoom || 13;
+  const startZoom = urlState.zoom || defaultZoom;
   
   initMap(performSearch, openStationById, [startLat, startLng], startZoom);
   
@@ -72,7 +74,7 @@ function bindControls() {
     setStatus(t('detecting_pos'));
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        state.map.setView([pos.coords.latitude, pos.coords.longitude], 14);
+        state.map.setView([pos.coords.latitude, pos.coords.longitude], defaultZoom);
       },
       () => setStatus(t('pos_error')),
       { timeout: 10000 }
@@ -106,20 +108,76 @@ function bindControls() {
 
   const addressInput = document.getElementById('addressSearch');
   const searchBtn = document.getElementById('searchBtn');
+  const suggestionsBox = document.getElementById('searchSuggestions');
+  
+  let debounceTimeout;
+
+  const showSuggestions = async () => {
+    const query = addressInput.value.trim();
+    if (query.length < 3) {
+      suggestionsBox.classList.add('hidden');
+      return;
+    }
+
+    try {
+      const results = await geocodeAddress(query, state.lang);
+      if (results && results.length > 0) {
+        suggestionsBox.innerHTML = results.map(res => `
+          <div class="suggestion-item" data-lat="${res.lat}" data-lon="${res.lon}">
+            ${res.display_name}
+          </div>
+        `).join('');
+        suggestionsBox.classList.remove('hidden');
+      } else {
+        suggestionsBox.classList.add('hidden');
+      }
+    } catch (err) {
+      console.error('Suggestions error:', err);
+    }
+  };
+
+  addressInput.addEventListener('input', () => {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(showSuggestions, 400);
+  });
+
+  suggestionsBox.addEventListener('click', (e) => {
+    const item = e.target.closest('.suggestion-item');
+    if (!item) return;
+
+    const lat = parseFloat(item.dataset.lat);
+    const lon = parseFloat(item.dataset.lon);
+    
+    addressInput.value = item.textContent.trim();
+    suggestionsBox.classList.add('hidden');
+    
+    state.map.setView([lat, lon], defaultZoom);
+    performSearch(lat, lon);
+    
+    closePanel();
+    closeHistoryPanel();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrap')) {
+      suggestionsBox.classList.add('hidden');
+    }
+  });
+
   const doSearch = async () => {
     const query = addressInput.value.trim();
     if (!query) return;
     
-    // Close panels when searching by place
     closePanel();
     closeHistoryPanel();
+    suggestionsBox.classList.add('hidden');
     
     setStatus(t('loading'));
     try {
       const data = await geocodeAddress(query, state.lang);
       if (data && data.length > 0) {
         const { lat, lon } = data[0];
-        state.map.setView([lat, lon], 14);
+        state.map.setView([lat, lon], defaultZoom);
         performSearch(lat, lon);
       } else {
         setStatus(t('nd'));
@@ -128,6 +186,7 @@ function bindControls() {
       setStatus(t('error', { msg: err.message }));
     }
   };
+
   searchBtn.addEventListener('click', doSearch);
   addressInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') doSearch();
@@ -197,7 +256,7 @@ export async function openStationById(id, knownLocation = null, forceSearch = fa
     }
     
     if (station.location) {
-      const zoom = Math.max(state.map.getZoom(), 15);
+      const zoom = Math.max(state.map.getZoom(), defaultZoom);
       const isDesktop = window.innerWidth > 900;
       const offset = isDesktop ? 0.002 : 0;
       state.map.flyTo([station.location.lat, station.location.lng - offset], zoom, {
