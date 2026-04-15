@@ -51,7 +51,7 @@ export class Sheet {
         if (!this.isMobileView()) return;
         if (this.panel.classList.contains('mobile-hidden')) return;
 
-        const isHandle = e.target.closest('.sheet-handle');
+        const isHandle = e.target.closest('.sheet-handle') || e.target.closest('.sheet-header');
         if (isHandle) {
             this.startY = e.clientY;
             this.isDragging = true;

@@ -685,24 +685,33 @@ select:hover { border-color: var(--accent); }
   }
   #controls.mobile-hidden { transform: translateY(-150%); }
 
-  .sheet-handle {
-    display: block;
-    width: 40px;
-    height: 24px; /* Increased height for hit area */
-    padding: 10px 0; /* Extra hit area */
-    background: var(--border);
-    background-clip: content-box; /* Keep the pill look */
-    border-radius: 2px;
-    margin: 8px auto 0;
+  .sheet-header {
+    width: 100%;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     cursor: grab;
     touch-action: none;
+    position: relative;
+    z-index: 5;
   }
-  .sheet-handle:active { cursor: grabbing; }
+  .sheet-header:active { cursor: grabbing; }
+
+  .sheet-handle {
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: var(--text-muted);
+    opacity: 0.5;
+    border-radius: 2px;
+    pointer-events: none; /* Let header handle the touches */
+  }
 
   .top-sheet-handle {
-    margin-top: 16px;
-    margin-bottom: -8px; /* Offset padding to keep it tight to bottom */
+    margin: 8px auto;
+    pointer-events: auto; /* Keep it clickable for top sheet which has no header wrapper yet */
   }
 
   #panel {
