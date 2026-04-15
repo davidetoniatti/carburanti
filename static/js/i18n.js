@@ -104,3 +104,7 @@ export function t(key, params = {}) {
   });
   return text;
 }
+
+export function hasLocale(lang) {
+  return lang in translations;
+}

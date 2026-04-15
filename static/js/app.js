@@ -1,36 +1,37 @@
 import { state, getStateFromURL, updateURL, addToHistory } from './state.js';
-import { translations, t } from './i18n.js';
+import { hasLocale, t } from './i18n.js';
 import { fetchFuels, searchStations, geocodeAddress, fetchStationDetails } from './api.js';
 import { initMap, syncMarkers, selectMarker } from './map.js';
-import { updateUILanguage, setStatus, closePanel, toggleHistoryPanel, closeHistoryPanel, renderPanel } from './ui.js';
+import { updateUILanguage, closePanel, toggleHistoryPanel, closeHistoryPanel, renderPanel, showToast } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', bootstrapApp);
 
-const defaultZoom = 15;
+const DEFAULT_ZOOM = 15;
+const DEFAULT_LAT  = 41.9028; // Rome
+const DEFAULT_LNG  = 12.4964;
+const GEO_TIMEOUT_MS = 10_000;
 
 async function bootstrapApp() {
   const browserLang = navigator.language.split('-')[0];
-  if (translations[browserLang]) {
-    state.lang = browserLang;
-  }
+  if (hasLocale(browserLang)) state.lang = browserLang;
+
   document.getElementById('langSelect').value = state.lang;
   updateUILanguage();
-  
+
   const urlState = getStateFromURL();
   if (urlState.radius) {
     state.radius = urlState.radius;
     document.getElementById('radiusSelect').value = state.radius;
   }
-  
-  const startLat = urlState.lat || 41.9028;
-  const startLng = urlState.lng || 12.4964;
-  const startZoom = urlState.zoom || defaultZoom;
-  
+
+  const startLat  = urlState.lat  || DEFAULT_LAT;
+  const startLng  = urlState.lng  || DEFAULT_LNG;
+  const startZoom = urlState.zoom || DEFAULT_ZOOM;
+
   initMap(performSearch, openStationById, [startLat, startLng], startZoom);
-  
+
   await loadFuels(urlState.fuel);
   bindControls();
-  
   performSearch(startLat, startLng);
 }
 
@@ -40,15 +41,11 @@ async function loadFuels(defaultFuelId) {
   select.innerHTML = state.fuels.map(f =>
     `<option value="${f.id}">${f.name}</option>`
   ).join('');
-  
-  if (defaultFuelId && state.fuels.some(f => f.id === defaultFuelId)) {
-    state.selectedFuelId = defaultFuelId;
-    select.value = defaultFuelId;
-  } else {
-    state.selectedFuelId = state.fuels[0]?.id || 1;
-    select.value = state.selectedFuelId;
-    updateURL();
-  }
+
+  const validDefault = defaultFuelId && state.fuels.some(f => f.id === defaultFuelId);
+  state.selectedFuelId = validDefault ? defaultFuelId : (state.fuels[0]?.id || 1);
+  select.value = state.selectedFuelId;
+  if (!validDefault) updateURL();
 
   select.addEventListener('change', () => {
     state.selectedFuelId = parseInt(select.value);
@@ -68,16 +65,13 @@ function bindControls() {
 
   document.getElementById('locateBtn').addEventListener('click', () => {
     if (!navigator.geolocation) {
-      setStatus(t('geo_not_supported'));
+      showToast(t('geo_not_supported'), 'error');
       return;
     }
-    setStatus(t('detecting_pos'));
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        state.map.setView([pos.coords.latitude, pos.coords.longitude], defaultZoom);
-      },
-      () => setStatus(t('pos_error')),
-      { timeout: 10000 }
+      (pos) => state.map.setView([pos.coords.latitude, pos.coords.longitude], DEFAULT_ZOOM),
+      ()    => showToast(t('pos_error'), 'error'),
+      { timeout: GEO_TIMEOUT_MS }
     );
   });
 
@@ -92,144 +86,112 @@ function bindControls() {
   document.getElementById('historyPanelClose').addEventListener('click', closeHistoryPanel);
 
   const filterToggle = document.getElementById('filterToggle');
-  const controls = document.getElementById('controls');
+  const controls     = document.getElementById('controls');
   filterToggle.addEventListener('click', () => {
     filterToggle.classList.toggle('active');
     controls.classList.toggle('mobile-hidden');
   });
 
-  const searchHereBtn = document.getElementById('searchHereBtn');
-  if (searchHereBtn) {
-    searchHereBtn.addEventListener('click', () => {
-      const c = state.map.getCenter();
-      performSearch(c.lat, c.lng);
-    });
-  }
+  document.getElementById('searchHereBtn').addEventListener('click', () => {
+    const c = state.map.getCenter();
+    performSearch(c.lat, c.lng);
+  });
 
-  const addressInput = document.getElementById('addressSearch');
-  const searchBtn = document.getElementById('searchBtn');
+  bindAddressSearch();
+}
+
+function bindAddressSearch() {
+  const addressInput  = document.getElementById('addressSearch');
+  const searchBtn     = document.getElementById('searchBtn');
   const suggestionsBox = document.getElementById('searchSuggestions');
-  
   let debounceTimeout;
-
-  const showSuggestions = async () => {
-    const query = addressInput.value.trim();
-    if (query.length < 3) {
-      suggestionsBox.classList.add('hidden');
-      return;
-    }
-
-    try {
-      const results = await geocodeAddress(query, state.lang);
-      if (results && results.length > 0) {
-        suggestionsBox.innerHTML = results.map(res => `
-          <div class="suggestion-item" data-lat="${res.lat}" data-lon="${res.lon}">
-            ${res.display_name}
-          </div>
-        `).join('');
-        suggestionsBox.classList.remove('hidden');
-      } else {
-        suggestionsBox.classList.add('hidden');
-      }
-    } catch (err) {
-      console.error('Suggestions error:', err);
-    }
-  };
 
   addressInput.addEventListener('input', () => {
     clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(showSuggestions, 400);
+    debounceTimeout = setTimeout(() => showSuggestions(addressInput, suggestionsBox), 400);
   });
 
   suggestionsBox.addEventListener('click', (e) => {
     const item = e.target.closest('.suggestion-item');
     if (!item) return;
-
     const lat = parseFloat(item.dataset.lat);
     const lon = parseFloat(item.dataset.lon);
-    
     addressInput.value = item.textContent.trim();
     suggestionsBox.classList.add('hidden');
-    
-    state.map.setView([lat, lon], defaultZoom);
+    state.map.setView([lat, lon], DEFAULT_ZOOM);
     performSearch(lat, lon);
-    
     closePanel();
     closeHistoryPanel();
   });
 
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-wrap')) {
-      suggestionsBox.classList.add('hidden');
-    }
+    if (!e.target.closest('.search-wrap')) suggestionsBox.classList.add('hidden');
   });
 
   const doSearch = async () => {
     const query = addressInput.value.trim();
     if (!query) return;
-    
     closePanel();
     closeHistoryPanel();
     suggestionsBox.classList.add('hidden');
-    
-    setStatus(t('loading'));
     try {
       const data = await geocodeAddress(query, state.lang);
-      if (data && data.length > 0) {
+      if (data?.length > 0) {
         const { lat, lon } = data[0];
-        state.map.setView([lat, lon], defaultZoom);
+        state.map.setView([lat, lon], DEFAULT_ZOOM);
         performSearch(lat, lon);
       } else {
-        setStatus(t('nd'));
+        showToast(t('nd'), 'info');
       }
     } catch (err) {
-      setStatus(t('error', { msg: err.message }));
+      showToast(t('error', { msg: err.message }), 'error');
     }
   };
 
   searchBtn.addEventListener('click', doSearch);
-  addressInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') doSearch();
-  });
+  addressInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
+}
+
+async function showSuggestions(input, box) {
+  const query = input.value.trim();
+  if (query.length < 3) { box.classList.add('hidden'); return; }
+  try {
+    const results = await geocodeAddress(query, state.lang);
+    if (results?.length > 0) {
+      box.innerHTML = results.map(res =>
+        `<div class="suggestion-item" data-lat="${res.lat}" data-lon="${res.lon}">
+          ${res.display_name}
+        </div>`
+      ).join('');
+      box.classList.remove('hidden');
+    } else {
+      box.classList.add('hidden');
+    }
+  } catch {
+    box.classList.add('hidden');
+  }
 }
 
 export async function performSearch(lat, lng) {
-  setStatus(t('searching'));
-  const btn = document.getElementById('searchHereBtn');
-  if (btn) btn.classList.add('hidden');
-  
+  document.getElementById('searchHereBtn').classList.add('hidden');
   try {
     const data = await searchStations(lat, lng, state.radius, state.selectedFuelId);
-    
     state.stationsById.clear();
-    state.visibleStationIds.clear();
-    
     for (const s of (data.results || [])) {
       state.stationsById.set(String(s.id), s);
-      state.visibleStationIds.add(String(s.id));
     }
-    
     state.lastSearchCenter = L.latLng(lat, lng);
-    state.lastSearchZoom = state.map ? state.map.getZoom() : null;
-    
+    state.lastSearchZoom   = state.map?.getZoom() ?? null;
     syncMarkers();
-    
-    const count = state.markers.size;
-    setStatus(
-      t('stations_found', { count: count, radius: state.radius }),
-      t('stations_count', { count: count })
-    );
   } catch (err) {
-    if (err.name === 'AbortError') return;
-    setStatus(t('error', { msg: err.message }));
+    if (err.name !== 'AbortError') showToast(t('error', { msg: err.message }), 'error');
   }
 }
 
 export async function openStationById(id, knownLocation = null, forceSearch = false) {
   const sId = String(id);
-  
   selectMarker(sId);
-  
+
   const panel = document.getElementById('panel');
   panel.classList.remove('hidden');
   document.getElementById('panelContent').innerHTML = `
@@ -237,37 +199,38 @@ export async function openStationById(id, knownLocation = null, forceSearch = fa
       <div class="spinner"></div>
       <p>${t('loading_details')}</p>
     </div>`;
-    
+
   try {
     const station = await fetchStationDetails(sId);
     state.currentStationData = station;
-    
-    if (!station.location && knownLocation) {
-      station.location = knownLocation;
-    } else if (!station.location && state.stationsById.has(sId)) {
-      station.location = state.stationsById.get(sId).location;
-    }
-    
+
+    // Resolve location from fallbacks if API didn't return one
+    station.location ??= knownLocation ?? state.stationsById.get(sId)?.location;
+
     addToHistory(station);
-    
+
     if ((forceSearch || !state.markers.has(sId)) && station.location) {
       await performSearch(station.location.lat, station.location.lng);
       selectMarker(sId);
     }
-    
-    if (station.location) {
-      const zoom = Math.max(state.map.getZoom(), defaultZoom);
-      const isDesktop = window.innerWidth > 900;
-      const offset = isDesktop ? 0.002 : 0;
-      state.map.flyTo([station.location.lat, station.location.lng - offset], zoom, {
-        duration: 0.8
-      });
-    }
-    
+
+    _centerMapOnStation(station);
     renderPanel(station);
   } catch (err) {
     if (err.name === 'AbortError') return;
-    document.getElementById('panelContent').innerHTML = `
-      <div class="panel-loading"><p>${t('error', { msg: err.message })}</p></div>`;
+    document.getElementById('panelContent').innerHTML =
+      `<div class="panel-loading"><p>${t('error', { msg: err.message })}</p></div>`;
   }
+}
+
+const FLY_DURATION_S      = 0.8;
+const DESKTOP_BREAKPOINT  = 900;
+const PANEL_LNG_OFFSET    = 0.002; // rough degree offset to uncenter map from behind panel
+
+function _centerMapOnStation(station) {
+  if (!station.location) return;
+  const { lat, lng } = station.location;
+  const zoom = Math.max(state.map.getZoom(), DEFAULT_ZOOM);
+  const lngOffset = window.innerWidth > DESKTOP_BREAKPOINT ? PANEL_LNG_OFFSET : 0;
+  state.map.flyTo([lat, lng - lngOffset], zoom, { duration: FLY_DURATION_S });
 }

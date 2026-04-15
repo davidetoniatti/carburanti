@@ -3,10 +3,6 @@ import { t } from './i18n.js';
 import { escapeHtml, timeAgo } from './formatters.js';
 import { openStationById } from './app.js';
 
-export function setStatus(msg, count = '') {
-  // Status bar removed, logic no longer needed but kept for potential future use or non-breaking API
-}
-
 export function updateUILanguage() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
@@ -24,6 +20,26 @@ export function updateUILanguage() {
   if (!document.getElementById('panel').classList.contains('hidden') && state.currentStationData) {
     renderPanel(state.currentStationData);
   }
+}
+
+export function showToast(msg, type = 'info') {
+  const existing = document.getElementById('toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'toast';
+  toast.className = `toast toast--${type}`;
+  toast.textContent = msg;
+  document.getElementById('app').appendChild(toast);
+
+  // Trigger reflow so the transition plays from opacity 0
+  toast.offsetHeight;
+  toast.classList.add('toast--visible');
+
+  setTimeout(() => {
+    toast.classList.remove('toast--visible');
+    toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+  }, 3000);
 }
 
 export function closePanel() {

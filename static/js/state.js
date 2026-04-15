@@ -2,9 +2,7 @@ export const state = {
   map: null,
   markers: new Map(), // stationId -> { marker, el, priceEl, color, price }
   stationsById: new Map(),
-  visibleStationIds: new Set(),
   detailsCache: new Map(),
-  domRefs: {}, // For caching DOM elements if needed
   fuels: [],
   selectedFuelId: null,
   radius: 5,
@@ -13,7 +11,6 @@ export const state = {
   requests: {
     searchAbortController: null,
     detailAbortController: null,
-    searchRequestId: 0,
   },
   currentStationData: null,
   lastSearchCenter: null,
