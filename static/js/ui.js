@@ -120,27 +120,6 @@ function renderFuelRow(name, selfPrice, servedPrice) {
     </div>`;
 }
 
-function renderHours(hours) {
-  if (!hours || hours.length === 0) return '';
-  const cells = hours.map((h, i) => {
-    const day = t('days')[h.giornoSettimanaId - 1] || `G${i}`;
-    let status = '', cls = '';
-    if (h.flagH24) { status = t('h24'); cls = 'h24'; }
-    else if (h.flagChiusura) { status = t('closed'); cls = 'closed'; }
-    else if (h.flagNonComunicato) { status = t('nc'); cls = 'nc'; }
-    else if (h.flagSelf) { status = 'Self'; cls = 'open'; }
-    else { status = t('open'); cls = 'open'; }
-    return `
-      <div class="day-cell">
-        <span class="day-name">${day}</span>
-        <span class="day-status ${cls}">${status}</span>
-      </div>`;
-  }).join('');
-  return `
-    <div class="section-title">${t('weekly_hours')}</div>
-    <div class="hours-grid">${cells}</div>`;
-}
-
 function renderContactRow(labelKey, value, hrefPrefix = '') {
   if (!value) return '';
   const escaped = escapeHtml(value);
@@ -210,8 +189,6 @@ export function renderPanel(station) {
     <div class="fuel-grid">
       ${fuelHtml || `<p class="empty-msg">${t('no_prices')}</p>`}
     </div>
-
-    ${renderHours(station.orariapertura)}
 
     <div class="section-title">${t('contacts')}</div>
     <div class="station-contacts">

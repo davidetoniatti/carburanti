@@ -18,23 +18,6 @@ type Fuel struct {
 	ValidityDate  string  `json:"validityDate,omitempty"`
 }
 
-type OpeningHours struct {
-	OrariAperturaID             int     `json:"orariAperturaId"`
-	GiornoSettimanaID           int     `json:"giornoSettimanaId"`
-	OraAperturaMattina          *string `json:"oraAperturaMattina"`
-	OraChiusuraMattina          *string `json:"oraChiusuraMattina"`
-	OraAperturaPomeriggio       *string `json:"oraAperturaPomeriggio"`
-	OraChiusuraPomeriggio       *string `json:"oraChiusuraPomeriggio"`
-	FlagOrarioContinuato        bool    `json:"flagOrarioContinuato"`
-	OraAperturaOrarioContinuato *string `json:"oraAperturaOrarioContinuato"`
-	OraChiusuraOrarioContinuato *string `json:"oraChiusuraOrarioContinuato"`
-	FlagH24                     bool    `json:"flagH24"`
-	FlagChiusura                bool    `json:"flagChiusura"`
-	FlagNonComunicato           bool    `json:"flagNonComunicato"`
-	FlagServito                 bool    `json:"flagServito"`
-	FlagSelf                    bool    `json:"flagSelf"`
-}
-
 type GasStation struct {
 	ID               int             `json:"id"`
 	Name             string          `json:"name"`
@@ -49,7 +32,6 @@ type GasStation struct {
 	Website          string          `json:"website,omitempty"`
 	Company          string          `json:"company,omitempty"`
 	Services         json.RawMessage `json:"services,omitempty"`
-	Hours            []OpeningHours  `json:"orariapertura,omitempty"`
 	SelectedPrice    float64         `json:"selectedPrice,omitempty"`
 	SelectedFuelName string          `json:"selectedFuelName,omitempty"`
 }
