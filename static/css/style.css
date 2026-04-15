@@ -21,6 +21,20 @@
   --hidden-vh: 100dvh;
 }
 
+[data-theme="light"] {
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --surface2: #f9fafb;
+  --border: #e5e7eb;
+  --accent: #7c3aed;
+  --accent2: #0ea5e9;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --green: #059669;
+  --yellow: #d97706;
+  --red: #dc2626;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -29,9 +43,33 @@ body {
   color: var(--text);
   height: 100dvh;
   overflow: hidden;
+  transition: background 0.3s, color 0.3s;
 }
 
 #app { display: flex; flex-direction: column; height: 100dvh; }
+
+/* -- THEME TOGGLE -- */
+#themeToggle {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+#themeToggle:hover { border-color: var(--accent); color: var(--accent); }
+
+#themeToggle .sun-icon { display: block; }
+#themeToggle .moon-icon { display: none; }
+
+[data-theme="light"] #themeToggle .sun-icon { display: none; }
+[data-theme="light"] #themeToggle .moon-icon { display: block; }
+[data-theme="light"] .leaflet-tile { filter: none !important; }
+
 
 /* -- TOAST -- */
 .toast {
@@ -703,6 +741,14 @@ select:hover { border-color: var(--accent); }
   .top-sheet-handle {
     margin-top: 16px;
     margin-bottom: -8px; /* Offset padding to keep it tight to bottom */
+  }
+  
+  #panelClose, #historyPanelClose {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    margin: 0;
+    z-index: 100;
   }
   
   #panel { 

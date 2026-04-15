@@ -9,6 +9,7 @@ export const state = {
   radius: SEARCH_CONFIG.DEFAULT_RADIUS,
   selectedStationId: null,
   lang: 'en',
+  theme: 'dark',
   requests: {
     searchAbortController: null,
     detailAbortController: null,

@@ -2,24 +2,46 @@ import { state, getStateFromURL, updateURL, addToHistory } from './state.js';
 import { hasLocale, t } from './i18n.js';
 import { fetchFuels, searchStations, geocodeAddress, fetchStationDetails } from './api.js';
 import { initMap, syncMarkers, selectMarker } from './map.js';
-import { updateUILanguage, closePanel, toggleHistoryPanel, closeHistoryPanel, renderPanel, showToast, bindHistoryEvents } from './ui.js';
+import { updateUILanguage, closePanelUI, toggleHistoryPanel, closeHistoryPanelUI, renderPanel, showToast, bindHistoryEvents } from './ui.js';
 import { Sheet } from './Sheet.js';
 import { checkTutorial } from './tutorial.js';
 import { BREAKPOINTS, TIMEOUTS, MAP_CONFIG, SEARCH_CONFIG } from './constants.js';
+import { elements } from './dom.js';
 
 document.addEventListener('DOMContentLoaded', bootstrapApp);
+
+export function closePanel() {
+  closePanelUI();
+  state.currentStationData = null;
+
+  if (state.selectedStationId && state.markers.has(state.selectedStationId)) {
+    const entry = state.markers.get(state.selectedStationId);
+    if (entry.el) entry.el.classList.remove('selected');
+    entry.marker.setZIndexOffset(0);
+  }
+  state.selectedStationId = null;
+}
+
+export function closeHistoryPanel() {
+  closeHistoryPanelUI();
+}
+
 
 async function bootstrapApp() {
   const browserLang = navigator.language.split('-')[0];
   if (hasLocale(browserLang)) state.lang = browserLang;
 
-  document.getElementById('langSelect').value = state.lang;
+  const savedTheme = localStorage.getItem('ohmypieno_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  state.theme = savedTheme;
+
+  elements.langSelect.value = state.lang;
   updateUILanguage();
 
   const urlState = getStateFromURL();
   if (urlState.radius) {
     state.radius = urlState.radius;
-    document.getElementById('radiusSelect').value = state.radius;
+    elements.radiusSelect.value = state.radius;
   }
 
   const startLat  = urlState.lat  || MAP_CONFIG.DEFAULT_LAT;
@@ -30,7 +52,7 @@ async function bootstrapApp() {
 
   await loadFuels(urlState.fuel);
   bindControls();
-  bindHistoryEvents();
+  bindHistoryEvents(openStationById);
   new Sheet('panel', 'bottom');
   new Sheet('historyPanel', 'bottom');
   new Sheet('controls', 'top');
@@ -38,20 +60,30 @@ async function bootstrapApp() {
   checkTutorial();
 }
 
+function setTheme(theme) {
+  state.theme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('ohmypieno_theme', theme);
+}
+
+function toggleTheme() {
+  const next = state.theme === 'dark' ? 'light' : 'dark';
+  setTheme(next);
+}
+
 async function loadFuels(defaultFuelId) {
   state.fuels = await fetchFuels();
-  const select = document.getElementById('fuelSelect');
-  select.innerHTML = state.fuels.map(f =>
+  elements.fuelSelect.innerHTML = state.fuels.map(f =>
     `<option value="${f.id}">${f.name}</option>`
   ).join('');
 
   const validDefault = defaultFuelId && state.fuels.some(f => f.id === defaultFuelId);
   state.selectedFuelId = validDefault ? defaultFuelId : (state.fuels[0]?.id || 1);
-  select.value = state.selectedFuelId;
+  elements.fuelSelect.value = state.selectedFuelId;
   if (!validDefault) updateURL();
 
-  select.addEventListener('change', () => {
-    state.selectedFuelId = parseInt(select.value);
+  elements.fuelSelect.addEventListener('change', () => {
+    state.selectedFuelId = parseInt(elements.fuelSelect.value);
     const c = state.map.getCenter();
     performSearch(c.lat, c.lng);
     updateURL();
@@ -59,14 +91,14 @@ async function loadFuels(defaultFuelId) {
 }
 
 function bindControls() {
-  document.getElementById('radiusSelect').addEventListener('change', (e) => {
+  elements.radiusSelect.addEventListener('change', (e) => {
     state.radius = parseInt(e.target.value);
     const c = state.map.getCenter();
     performSearch(c.lat, c.lng);
     updateURL();
   });
 
-  document.getElementById('locateBtn').addEventListener('click', () => {
+  elements.locateBtn.addEventListener('click', () => {
     if (!navigator.geolocation) {
       showToast(t('geo_not_supported'), 'error');
       return;
@@ -78,34 +110,34 @@ function bindControls() {
     );
   });
 
-  document.getElementById('langSelect').addEventListener('change', (e) => {
+  elements.langSelect.addEventListener('change', (e) => {
     state.lang = e.target.value;
     updateUILanguage();
     updateURL();
   });
 
-  document.getElementById('panelClose').addEventListener('click', closePanel);
-  document.getElementById('historyToggle').addEventListener('click', toggleHistoryPanel);
-  document.getElementById('historyPanelClose').addEventListener('click', closeHistoryPanel);
+  elements.panelClose.addEventListener('click', closePanel);
+  elements.historyToggle.addEventListener('click', toggleHistoryPanel);
+  elements.historyPanelClose.addEventListener('click', closeHistoryPanel);
 
-  document.getElementById('panel').addEventListener('sheetClosed', closePanel);
-  document.getElementById('historyPanel').addEventListener('sheetClosed', closeHistoryPanel);
+  elements.panel.addEventListener('sheetClosed', closePanel);
+  elements.historyPanel.addEventListener('sheetClosed', closeHistoryPanel);
 
-  const filterToggle = document.getElementById('filterToggle');
-  const controls     = document.getElementById('controls');
-  filterToggle.addEventListener('click', () => {
-    filterToggle.classList.toggle('active');
-    controls.classList.toggle('mobile-hidden');
+  elements.filterToggle.addEventListener('click', () => {
+    elements.filterToggle.classList.toggle('active');
+    elements.controls.classList.toggle('mobile-hidden');
   });
 
-  controls.addEventListener('sheetClosed', () => {
-    filterToggle.classList.remove('active');
+  elements.controls.addEventListener('sheetClosed', () => {
+    elements.filterToggle.classList.remove('active');
   });
 
-  document.getElementById('searchHereBtn').addEventListener('click', () => {
+  elements.searchHereBtn.addEventListener('click', () => {
     const c = state.map.getCenter();
     performSearch(c.lat, c.lng);
   });
+
+  elements.themeToggle.addEventListener('click', toggleTheme);
 
   bindAddressSearch();
 }
@@ -113,14 +145,15 @@ function bindControls() {
 function resetSearchUI() {
   closePanel();
   closeHistoryPanel();
-  document.getElementById('searchSuggestions').classList.add('hidden');
+  elements.searchSuggestions.classList.add('hidden');
 }
 
 function bindAddressSearch() {
-  const addressInput  = document.getElementById('addressSearch');
-  const searchBtn     = document.getElementById('searchBtn');
-  const suggestionsBox = document.getElementById('searchSuggestions');
+  const addressInput  = elements.addressSearch;
+  const searchBtn     = elements.searchBtn;
+  const suggestionsBox = elements.searchSuggestions;
   let debounceTimeout;
+
 
   addressInput.addEventListener('input', () => {
     clearTimeout(debounceTimeout);
@@ -185,7 +218,7 @@ async function showSuggestions(input, box) {
 }
 
 export async function performSearch(lat, lng) {
-  document.getElementById('searchHereBtn').classList.add('hidden');
+  elements.searchHereBtn.classList.add('hidden');
   try {
     const data = await searchStations(lat, lng, state.radius, state.selectedFuelId);
     state.stationsById.clear();
@@ -201,10 +234,9 @@ export async function performSearch(lat, lng) {
 }
 
 function showPanelLoading() {
-  const panel = document.getElementById('panel');
-  panel.classList.remove('hidden');
-  if (window.innerWidth <= BREAKPOINTS.DESKTOP) panel.classList.add('peek');
-  document.getElementById('panelContent').innerHTML = `
+  elements.panel.classList.remove('hidden');
+  if (window.innerWidth <= BREAKPOINTS.DESKTOP) elements.panel.classList.add('peek');
+  elements.panelContent.innerHTML = `
     <div class="panel-loading">
       <div class="spinner"></div>
       <p>${t('loading_details')}</p>
@@ -212,7 +244,7 @@ function showPanelLoading() {
 }
 
 function showPanelError(message) {
-  document.getElementById('panelContent').innerHTML =
+  elements.panelContent.innerHTML =
     `<div class="panel-loading"><p>${t('error', { msg: message })}</p></div>`;
 }
 
@@ -237,7 +269,7 @@ function focusMapOnStation(station) {
   const zoom = Math.max(state.map.getZoom(), MAP_CONFIG.DEFAULT_ZOOM);
 
   if (window.innerWidth > BREAKPOINTS.DESKTOP) {
-    const panelWidth = document.getElementById('panel')?.offsetWidth ?? 0;
+    const panelWidth = elements.panel?.offsetWidth ?? 0;
     state.map.flyTo([lat, lng], zoom, { duration: MAP_CONFIG.FLY_DURATION_S });
     return;
   }
@@ -248,6 +280,11 @@ function focusMapOnStation(station) {
 export async function openStationById(id, knownLocation = null, forceSearch = false) {
   const sId = String(id);
   selectMarker(sId);
+  
+  if (window.innerWidth <= BREAKPOINTS.DESKTOP) {
+    closeHistoryPanelUI();
+  }
+
   showPanelLoading();
 
   try {

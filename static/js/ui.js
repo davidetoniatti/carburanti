@@ -1,8 +1,9 @@
 import { state } from './state.js';
 import { t } from './i18n.js';
 import { escapeHtml, timeAgo } from './formatters.js';
-import { openStationById } from './app.js';
+import { openStationById, closePanel } from './app.js';
 import { BREAKPOINTS, TIMEOUTS } from './constants.js';
+import { elements } from './dom.js';
 
 export function updateUILanguage() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -18,7 +19,7 @@ export function updateUILanguage() {
     el.placeholder = t(key);
   });
   
-  if (!document.getElementById('panel').classList.contains('hidden') && state.currentStationData) {
+  if (!elements.panel.classList.contains('hidden') && state.currentStationData) {
     renderPanel(state.currentStationData);
   }
 }
@@ -31,7 +32,7 @@ export function showToast(msg, type = 'info') {
   toast.id = 'toast';
   toast.className = `toast toast--${type}`;
   toast.textContent = msg;
-  document.getElementById('app').appendChild(toast);
+  elements.app.appendChild(toast);
 
   // Trigger reflow so the transition plays from opacity 0
   toast.offsetHeight;
@@ -43,66 +44,54 @@ export function showToast(msg, type = 'info') {
   }, TIMEOUTS.TOAST_MS);
 }
 
-export function closePanel() {
-  const panel = document.getElementById('panel');
-  panel.classList.add('hidden');
-  panel.classList.remove('peek', 'full');
-  document.getElementById('map').classList.remove('has-selection');
-  state.currentStationData = null;
-
-  if (state.selectedStationId && state.markers.has(state.selectedStationId)) {
-    const entry = state.markers.get(state.selectedStationId);
-    if (entry.el) entry.el.classList.remove('selected');
-    entry.marker.setZIndexOffset(0);
-  }
-  state.selectedStationId = null;
+export function closePanelUI() {
+  elements.panel.classList.add('hidden');
+  elements.panel.classList.remove('peek', 'full');
+  elements.map.classList.remove('has-selection');
 }
 
 export function toggleHistoryPanel() {
-  const panel = document.getElementById('historyPanel');
-  const btn = document.getElementById('historyToggle');
-  const isHidden = panel.classList.contains('hidden');
+  const isHidden = elements.historyPanel.classList.contains('hidden');
   
   if (isHidden) {
-    closePanel();
+    if (window.innerWidth <= BREAKPOINTS.DESKTOP) {
+      closePanel();
+    }
     renderHistory();
-    panel.classList.remove('hidden');
-    if (window.innerWidth <= BREAKPOINTS.DESKTOP) panel.classList.add('peek');
-    btn.classList.add('active');
+    elements.historyPanel.classList.remove('hidden');
+    if (window.innerWidth <= BREAKPOINTS.DESKTOP) elements.historyPanel.classList.add('peek');
+    elements.historyToggle.classList.add('active');
   } else {
-    closeHistoryPanel();
+    closeHistoryPanelUI();
   }
 }
 
-export function closeHistoryPanel() {
-  const panel = document.getElementById('historyPanel');
-  panel.classList.add('hidden');
-  panel.classList.remove('peek', 'full');
-  document.getElementById('historyToggle').classList.remove('active');
+export function closeHistoryPanelUI() {
+  elements.historyPanel.classList.add('hidden');
+  elements.historyPanel.classList.remove('peek', 'full');
+  elements.historyToggle.classList.remove('active');
 }
 
-export function bindHistoryEvents() {
-  document.getElementById('historyList').addEventListener('click', (e) => {
+export function bindHistoryEvents(onHistoryClick) {
+  elements.historyList.addEventListener('click', (e) => {
     const item = e.target.closest('.history-item');
     if (!item) return;
 
     const id = String(item.dataset.id);
     const historyEntry = state.history.find(entry => String(entry.id) === id);
 
-    openStationById(id, historyEntry?.location, true);
-    closeHistoryPanel();
+    onHistoryClick(id, historyEntry?.location);
+    closeHistoryPanelUI();
   });
 }
 
 export function renderHistory() {
-  const list = document.getElementById('historyList');
-
   if (state.history.length === 0) {
-    list.innerHTML = `<li class="empty-msg">${t('no_history')}</li>`;
+    elements.historyList.innerHTML = `<li class="empty-msg">${t('no_history')}</li>`;
     return;
   }
 
-  list.innerHTML = state.history.map(entry => `
+  elements.historyList.innerHTML = state.history.map(entry => `
     <li class="history-item" data-id="${entry.id}">
       <div class="history-item-brand">${entry.brand ? escapeHtml(entry.brand) : t('nd')}</div>
       <div class="history-item-name">${escapeHtml(entry.name || t('nd'))}</div>
@@ -205,7 +194,7 @@ export function renderPanel(station) {
     ? `https://www.openstreetmap.org/?mlat=${station.location.lat}&mlon=${station.location.lng}&zoom=17`
     : '#';
     
-  document.getElementById('panelContent').innerHTML = `
+  elements.panelContent.innerHTML = `
     <div class="station-header">
       <div class="station-brand-badge">${escapeHtml(station.brand || t('nd'))}</div>
       <div class="station-name">${escapeHtml(station.name)}</div>
