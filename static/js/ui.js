@@ -95,7 +95,7 @@ export function renderHistory() {
       if (!item) return;
       const id = String(item.dataset.id);
       const historyEntry = state.history.find(h => String(h.id) === id);
-      openStationById(id, historyEntry?.location);
+      openStationById(id, historyEntry?.location, true);
       closeHistoryPanel();
     });
     historyEventBound = true;

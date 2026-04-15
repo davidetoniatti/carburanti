@@ -69,7 +69,9 @@ export function syncMarkers() {
   for (const s of state.stationsById.values()) {
     if (!s.location || !s.selectedPrice) continue;
     
-    if (!bounds.contains([s.location.lat, s.location.lng])) continue;
+    const sId = String(s.id);
+    const isSelected = sId === state.selectedStationId;
+    if (!isSelected && !bounds.contains([s.location.lat, s.location.lng])) continue;
     
     const price = s.selectedPrice;
     if (price < minPrice) minPrice = price;

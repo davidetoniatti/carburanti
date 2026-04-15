@@ -161,7 +161,7 @@ export async function performSearch(lat, lng) {
   }
 }
 
-export async function openStationById(id, knownLocation = null) {
+export async function openStationById(id, knownLocation = null, forceSearch = false) {
   const sId = String(id);
   
   selectMarker(sId);
@@ -185,6 +185,11 @@ export async function openStationById(id, knownLocation = null) {
     }
     
     addToHistory(station);
+    
+    if ((forceSearch || !state.markers.has(sId)) && station.location) {
+      await performSearch(station.location.lat, station.location.lng);
+      selectMarker(sId);
+    }
     
     if (station.location) {
       const zoom = Math.max(state.map.getZoom(), 15);
