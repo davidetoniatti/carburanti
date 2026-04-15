@@ -30,13 +30,11 @@ export const elements = {
     // Detail Panel
     panel: document.getElementById('panel'),
     panelContent: document.getElementById('panelContent'),
-    panelClose: document.getElementById('panelClose'),
     
     // History Panel
     historyPanel: document.getElementById('historyPanel'),
     historyPanelContent: document.getElementById('historyPanelContent'),
     historyToggle: document.getElementById('historyToggle'),
-    historyPanelClose: document.getElementById('historyPanelClose'),
     historyList: document.getElementById('historyList'),
     themeToggle: document.getElementById('themeToggle'),
     

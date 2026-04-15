@@ -196,14 +196,11 @@ export function renderPanel(station) {
     
   elements.panelContent.innerHTML = `
     <div class="station-header">
-      <div class="station-brand-badge">${escapeHtml(station.brand || t('nd'))}</div>
-      <div class="station-name">${escapeHtml(station.name)}</div>
+      <div class="station-brand">${escapeHtml(station.brand || t('nd'))}</div>
       <div class="station-address">${escapeHtml(addr)}</div>
-      <div class="station-id">${t("station_id")}: ${station.id}</div>
-      ${latestDate ? `<div class="station-update">${t('last_update', { time: timeAgo(latestDate) })}</div>` : ''}
-      ${station.company ? `<div class="station-company">${escapeHtml(station.company)}</div>` : ''}
-      <div class="station-links">
-        <a href="${mapsUrl}" target="_blank" rel="noopener" class="station-link">
+      <div class="station-update-container">
+        ${latestDate ? `<div class="station-update">${t('last_update', { time: timeAgo(latestDate) })}</div>` : ''}
+        <a href="${mapsUrl}" target="_blank" rel="noopener" class="station-map-link">
           ${t('open_in_map')}
         </a>
       </div>
@@ -217,10 +214,17 @@ export function renderPanel(station) {
     ${renderHours(station.orariapertura)}
 
     <div class="section-title">${t('contacts')}</div>
-    <div>
+    <div class="station-contacts">
       ${renderContactRow('phone', station.phoneNumber, 'tel:')}
       ${renderContactRow('email', station.email, 'mailto:')}
       ${renderContactRow('web', station.website)}
+    </div>
+
+    <div class="section-title">${t('additional_info')}</div>
+    <div class="station-footer">
+      <div class="footer-row"><span class="footer-label">${t('station_name')}:</span> ${escapeHtml(station.name)}</div>
+      <div class="footer-row"><span class="footer-label">${t("station_id")}:</span> ${station.id}</div>
+      ${station.company ? `<div class="footer-row"><span class="footer-label">${t('company')}:</span> ${escapeHtml(station.company)}</div>` : ''}
     </div>
   `;
 }

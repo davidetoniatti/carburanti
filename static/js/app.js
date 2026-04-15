@@ -116,9 +116,7 @@ function bindControls() {
     updateURL();
   });
 
-  elements.panelClose.addEventListener('click', closePanel);
   elements.historyToggle.addEventListener('click', toggleHistoryPanel);
-  elements.historyPanelClose.addEventListener('click', closeHistoryPanel);
 
   elements.panel.addEventListener('sheetClosed', closePanel);
   elements.historyPanel.addEventListener('sheetClosed', closeHistoryPanel);
