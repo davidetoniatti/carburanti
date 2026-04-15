@@ -190,12 +190,14 @@ export function renderPanel(station) {
       ${fuelHtml || `<p class="empty-msg">${t('no_prices')}</p>`}
     </div>
 
-    <div class="section-title">${t('contacts')}</div>
-    <div class="station-contacts">
-      ${renderContactRow('phone', station.phoneNumber, 'tel:')}
-      ${renderContactRow('email', station.email, 'mailto:')}
-      ${renderContactRow('web', station.website)}
-    </div>
+    ${(station.phoneNumber || station.email || station.website) ? `
+      <div class="section-title">${t('contacts')}</div>
+      <div class="station-contacts">
+        ${renderContactRow('phone', station.phoneNumber, 'tel:')}
+        ${renderContactRow('email', station.email, 'mailto:')}
+        ${renderContactRow('web', station.website)}
+      </div>
+    ` : ''}
 
     <div class="section-title">${t('additional_info')}</div>
     <div class="station-footer">
