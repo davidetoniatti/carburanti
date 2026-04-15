@@ -3,18 +3,11 @@ import { hasLocale, t } from './i18n.js';
 import { fetchFuels, searchStations, geocodeAddress, fetchStationDetails } from './api.js';
 import { initMap, syncMarkers, selectMarker } from './map.js';
 import { updateUILanguage, closePanel, toggleHistoryPanel, closeHistoryPanel, renderPanel, showToast, bindHistoryEvents } from './ui.js';
-import { initBottomSheet } from './bottomSheet.js';
+import { Sheet } from './Sheet.js';
+import { checkTutorial } from './tutorial.js';
+import { BREAKPOINTS, TIMEOUTS, MAP_CONFIG, SEARCH_CONFIG } from './constants.js';
 
 document.addEventListener('DOMContentLoaded', bootstrapApp);
-
-const DEFAULT_ZOOM        = 15;
-const DEFAULT_LAT         = 41.9028; // Rome
-const DEFAULT_LNG         = 12.4964;
-const GEO_TIMEOUT_MS      = 10_000;
-const FLY_DURATION_S      = 0.8;
-const DESKTOP_BREAKPOINT  = 900;
-const SUGGESTIONS_DEBOUNCE_MS = 400;
-const MIN_ADDRESS_QUERY_LENGTH = 3;
 
 async function bootstrapApp() {
   const browserLang = navigator.language.split('-')[0];
@@ -29,18 +22,20 @@ async function bootstrapApp() {
     document.getElementById('radiusSelect').value = state.radius;
   }
 
-  const startLat  = urlState.lat  || DEFAULT_LAT;
-  const startLng  = urlState.lng  || DEFAULT_LNG;
-  const startZoom = urlState.zoom || DEFAULT_ZOOM;
+  const startLat  = urlState.lat  || MAP_CONFIG.DEFAULT_LAT;
+  const startLng  = urlState.lng  || MAP_CONFIG.DEFAULT_LNG;
+  const startZoom = urlState.zoom || MAP_CONFIG.DEFAULT_ZOOM;
 
   initMap(performSearch, openStationById, [startLat, startLng], startZoom);
 
   await loadFuels(urlState.fuel);
   bindControls();
   bindHistoryEvents();
-  initBottomSheet('panel');
-  initBottomSheet('historyPanel');
+  new Sheet('panel', 'bottom');
+  new Sheet('historyPanel', 'bottom');
+  new Sheet('controls', 'top');
   performSearch(startLat, startLng);
+  checkTutorial();
 }
 
 async function loadFuels(defaultFuelId) {
@@ -77,9 +72,9 @@ function bindControls() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => state.map.setView([pos.coords.latitude, pos.coords.longitude], DEFAULT_ZOOM),
+      (pos) => state.map.setView([pos.coords.latitude, pos.coords.longitude], MAP_CONFIG.DEFAULT_ZOOM),
       ()    => showToast(t('pos_error'), 'error'),
-      { timeout: GEO_TIMEOUT_MS }
+      { timeout: TIMEOUTS.GEO_MS }
     );
   });
 
@@ -101,6 +96,10 @@ function bindControls() {
   filterToggle.addEventListener('click', () => {
     filterToggle.classList.toggle('active');
     controls.classList.toggle('mobile-hidden');
+  });
+
+  controls.addEventListener('sheetClosed', () => {
+    filterToggle.classList.remove('active');
   });
 
   document.getElementById('searchHereBtn').addEventListener('click', () => {
@@ -125,7 +124,7 @@ function bindAddressSearch() {
 
   addressInput.addEventListener('input', () => {
     clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => showSuggestions(addressInput, suggestionsBox), SUGGESTIONS_DEBOUNCE_MS);
+    debounceTimeout = setTimeout(() => showSuggestions(addressInput, suggestionsBox), TIMEOUTS.SUGGESTIONS_DEBOUNCE_MS);
   });
 
   suggestionsBox.addEventListener('click', (e) => {
@@ -134,7 +133,7 @@ function bindAddressSearch() {
     const lat = parseFloat(item.dataset.lat);
     const lon = parseFloat(item.dataset.lon);
     addressInput.value = item.textContent.trim();
-    state.map.setView([lat, lon], DEFAULT_ZOOM);
+    state.map.setView([lat, lon], MAP_CONFIG.DEFAULT_ZOOM);
     performSearch(lat, lon);
     resetSearchUI();
   });
@@ -151,7 +150,7 @@ function bindAddressSearch() {
       const data = await geocodeAddress(query, state.lang);
       if (data?.length > 0) {
         const { lat, lon } = data[0];
-        state.map.setView([lat, lon], DEFAULT_ZOOM);
+        state.map.setView([lat, lon], MAP_CONFIG.DEFAULT_ZOOM);
         performSearch(lat, lon);
       } else {
         showToast(t('nd'), 'info');
@@ -167,7 +166,7 @@ function bindAddressSearch() {
 
 async function showSuggestions(input, box) {
   const query = input.value.trim();
-  if (query.length < MIN_ADDRESS_QUERY_LENGTH) { box.classList.add('hidden'); return; }
+  if (query.length < SEARCH_CONFIG.MIN_ADDRESS_LENGTH) { box.classList.add('hidden'); return; }
   try {
     const results = await geocodeAddress(query, state.lang);
     if (results?.length > 0) {
@@ -204,7 +203,7 @@ export async function performSearch(lat, lng) {
 function showPanelLoading() {
   const panel = document.getElementById('panel');
   panel.classList.remove('hidden');
-  if (window.innerWidth <= DESKTOP_BREAKPOINT) panel.classList.add('peek');
+  if (window.innerWidth <= BREAKPOINTS.DESKTOP) panel.classList.add('peek');
   document.getElementById('panelContent').innerHTML = `
     <div class="panel-loading">
       <div class="spinner"></div>
@@ -235,15 +234,15 @@ function focusMapOnStation(station) {
   if (!station.location) return;
 
   const { lat, lng } = station.location;
-  const zoom = Math.max(state.map.getZoom(), DEFAULT_ZOOM);
+  const zoom = Math.max(state.map.getZoom(), MAP_CONFIG.DEFAULT_ZOOM);
 
-  if (window.innerWidth > DESKTOP_BREAKPOINT) {
+  if (window.innerWidth > BREAKPOINTS.DESKTOP) {
     const panelWidth = document.getElementById('panel')?.offsetWidth ?? 0;
-    state.map.flyTo([lat, lng], zoom, { duration: FLY_DURATION_S });
+    state.map.flyTo([lat, lng], zoom, { duration: MAP_CONFIG.FLY_DURATION_S });
     return;
   }
 
-  state.map.flyTo([lat, lng], zoom, { duration: FLY_DURATION_S });
+  state.map.flyTo([lat, lng], zoom, { duration: MAP_CONFIG.FLY_DURATION_S });
 }
 
 export async function openStationById(id, knownLocation = null, forceSearch = false) {

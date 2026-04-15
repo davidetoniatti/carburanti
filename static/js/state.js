@@ -1,10 +1,12 @@
+import { SEARCH_CONFIG, HISTORY_CONFIG } from './constants.js';
+
 export const state = {
   map: null,
   markers: new Map(),
   stationsById: new Map(),
   fuels: [],
   selectedFuelId: null,
-  radius: 5,
+  radius: SEARCH_CONFIG.DEFAULT_RADIUS,
   selectedStationId: null,
   lang: 'en',
   requests: {
@@ -16,8 +18,6 @@ export const state = {
   lastSearchZoom: null,
   history: [],
 };
-
-const MAX_HISTORY_SIZE = 10;
 
 export function addToHistory(station) {
   const stationId = String(station.id);
@@ -35,7 +35,7 @@ export function addToHistory(station) {
   state.history = [
     nextEntry,
     ...state.history.filter((item) => String(item.id) !== stationId),
-  ].slice(0, MAX_HISTORY_SIZE);
+  ].slice(0, HISTORY_CONFIG.MAX_SIZE);
 }
 
 export function getStateFromURL() {

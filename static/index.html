@@ -53,6 +53,7 @@
               <option value="it">IT</option>
             </select>
           </div>
+          <div class="sheet-handle top-sheet-handle"></div>
         </div>
 
         <div id="action-buttons">
@@ -84,7 +85,7 @@
       <button id="panelClose" type="button" aria-label="Close details">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" > <circle cx="12" cy="12" r="9"></circle> <path d="M9 9l6 6"></path> <path d="M15 9l-6 6"></path> </svg>
       </button>
-      <div id="panelContent">
+      <div id="panelContent" class="scrollable-content">
         <div class="panel-loading">
           <div class="spinner"></div>
           <p data-i18n="loading_details">Loading details...</p>
@@ -102,7 +103,7 @@
           <path d="M15 9l-6 6"></path>
         </svg>
       </button>
-      <div id="historyPanelContent">
+      <div id="historyPanelContent" class="scrollable-content">
         <div class="section-title" data-i18n="recent_title">RECENT STATIONS</div>
         <ul id="historyList"></ul>
       </div>

@@ -47,6 +47,14 @@ export const translations = {
     closed: "CLO",
     nc: "N/C",
     open: "OP",
+    tutorial_title: "Welcome to OhMyPieno",
+    tutorial_step1: "Find the cheapest fuel prices around you. Let's see how it works!",
+    tutorial_step2: "Select your fuel type and search radius. Prices will update automatically.",
+    tutorial_step3: "Search for a specific address or use the 'Locate' button to find stations near you.",
+    tutorial_step4: "Click on any station to see details and price history. Your recent views are saved in the history panel.",
+    btn_next: "Next",
+    btn_skip: "Skip",
+    btn_finish: "Start Exploring",
   },
   it: {
     title: "OhMyPieno",
@@ -94,6 +102,14 @@ export const translations = {
     closed: "CHI",
     nc: "N/C",
     open: "AP",
+    tutorial_title: "Benvenuto su OhMyPieno",
+    tutorial_step1: "Trova i prezzi dei carburanti più convenienti vicino a te. Vediamo come funziona!",
+    tutorial_step2: "Seleziona il tipo di carburante e il raggio di ricerca. I prezzi si aggiorneranno automaticamente.",
+    tutorial_step3: "Cerca un indirizzo specifico o usa il tasto 'Localizzami' per trovare stazioni vicino a te.",
+    tutorial_step4: "Clicca su ogni stazione per vedere i dettagli e lo storico prezzi. Le tue visualizzazioni recenti sono salvate nella cronologia.",
+    btn_next: "Avanti",
+    btn_skip: "Salta",
+    btn_finish: "Inizia a Esplorare",
   }
 };
 

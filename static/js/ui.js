@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { t } from './i18n.js';
 import { escapeHtml, timeAgo } from './formatters.js';
 import { openStationById } from './app.js';
+import { BREAKPOINTS, TIMEOUTS } from './constants.js';
 
 export function updateUILanguage() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -39,7 +40,7 @@ export function showToast(msg, type = 'info') {
   setTimeout(() => {
     toast.classList.remove('toast--visible');
     toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-  }, 3000);
+  }, TIMEOUTS.TOAST_MS);
 }
 
 export function closePanel() {
@@ -66,7 +67,7 @@ export function toggleHistoryPanel() {
     closePanel();
     renderHistory();
     panel.classList.remove('hidden');
-    if (window.innerWidth <= 900) panel.classList.add('peek');
+    if (window.innerWidth <= BREAKPOINTS.DESKTOP) panel.classList.add('peek');
     btn.classList.add('active');
   } else {
     closeHistoryPanel();
