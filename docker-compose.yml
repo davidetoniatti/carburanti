@@ -2,9 +2,8 @@ version: '3.8'
 
 services:
   app:
+    container_name: ohmypieno
     build: .
-    ports:
-      - "8080:8080"
     environment:
       - PORT=8080
       - OHMYPIENO_API_URL=https://carburanti.mise.gov.it/ospzApi
