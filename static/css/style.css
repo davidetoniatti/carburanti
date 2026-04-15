@@ -669,13 +669,14 @@ select:hover { border-color: var(--accent); }
   
   #controls {
     position: fixed;
-    top: var(--topbar-h);
+    top: 0;
     left: 0;
     right: 0;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     flex-direction: column;
-    padding: 16px;
+    padding: 0 16px 0;
+    padding-top: calc(var(--topbar-h) + 16px);
     gap: 16px;
     align-items: stretch;
     transition: transform 0.2s;
@@ -683,7 +684,7 @@ select:hover { border-color: var(--accent); }
     z-index: 1050;
     border-radius: 0 0 12px 12px;
   }
-  #controls.mobile-hidden { transform: translateY(-150%); }
+  #controls.mobile-hidden { transform: translateY(-100%); }
 
   .sheet-header {
     width: 100%;
@@ -699,6 +700,12 @@ select:hover { border-color: var(--accent); }
   }
   .sheet-header:active { cursor: grabbing; }
 
+  /* For top panels, handle area is at the bottom */
+  #controls .sheet-header {
+    order: 10; /* Ensure it stays at bottom of the flex container */
+    margin-top: 8px;
+  }
+
   .sheet-handle {
     display: block;
     width: 40px;
@@ -707,11 +714,6 @@ select:hover { border-color: var(--accent); }
     opacity: 0.5;
     border-radius: 2px;
     pointer-events: none; /* Let header handle the touches */
-  }
-
-  .top-sheet-handle {
-    margin: 8px auto;
-    pointer-events: auto; /* Keep it clickable for top sheet which has no header wrapper yet */
   }
 
   #panel {
