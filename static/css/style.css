@@ -379,15 +379,16 @@ select:hover { border-color: var(--accent); }
 #panelContent { padding: 12px 16px 24px; }
 .station-brand { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.2; margin-bottom: 6px; }
 
-.station-address { font-size: 14px; color: var(--text-muted); line-height: 1.4; flex: 1; }
-
-.station-update-container {
+.station-address-container {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
 }
+.station-address { font-size: 14px; color: var(--text-muted); line-height: 1.4; flex: 1; }
+
 .station-update { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); margin-top: 6px; }
+.station-distance { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 .station-map-link {
   font-family: 'Space Mono', monospace;
   font-size: 11px;

@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { t } from './i18n.js';
-import { escapeHtml, timeAgo } from './formatters.js';
+import { escapeHtml, timeAgo, getDistance } from './formatters.js';
 import { openStationById, closePanel } from './app.js';
 import { BREAKPOINTS, TIMEOUTS } from './constants.js';
 import { elements } from './dom.js';
@@ -173,16 +173,21 @@ export function renderPanel(station) {
     ? `https://www.openstreetmap.org/?mlat=${station.location.lat}&mlon=${station.location.lng}&zoom=17`
     : '#';
     
+  const dist = (state.userLocation && station.location) 
+    ? getDistance(state.userLocation.lat, state.userLocation.lng, station.location.lat, station.location.lng)
+    : null;
+
   elements.panelContent.innerHTML = `
     <div class="station-header">
       <div class="station-brand">${escapeHtml(station.brand || t('nd'))}</div>
-      <div class="station-address">${escapeHtml(addr)}</div>
-      <div class="station-update-container">
-        ${latestDate ? `<div class="station-update">${t('last_update', { time: timeAgo(latestDate) })}</div>` : ''}
+      <div class="station-address-container">
+        <div class="station-address">${escapeHtml(addr)}</div>
         <a href="${mapsUrl}" target="_blank" rel="noopener" class="station-map-link">
           ${t('open_in_map')}
         </a>
       </div>
+      ${latestDate ? `<div class="station-update">${t('last_update', { time: timeAgo(latestDate) })}</div>` : ''}
+      ${dist !== null ? `<div class="station-distance">${t('distance_from_pos', { d: dist.toFixed(1) })}</div>` : ''}
     </div>
 
     <div class="section-title">${t('fuel_prices')}</div>
