@@ -4,10 +4,7 @@ import { escapeHtml, timeAgo } from './formatters.js';
 import { openStationById } from './app.js';
 
 export function setStatus(msg, count = '') {
-  const statusText = document.getElementById('statusText');
-  const stationCount = document.getElementById('stationCount');
-  if (statusText) statusText.textContent = msg;
-  if (stationCount) stationCount.textContent = count;
+  // Status bar removed, logic no longer needed but kept for potential future use or non-breaking API
 }
 
 export function updateUILanguage() {
@@ -23,16 +20,6 @@ export function updateUILanguage() {
     const key = el.getAttribute('data-i18n-placeholder');
     el.placeholder = t(key);
   });
-  
-  if (state.stationsById.size === 0 && !state.lastSearchCenter) {
-    setStatus(t('status_initial'));
-  } else {
-    const count = state.markers.size;
-    setStatus(
-      t('stations_found', { count: count, radius: state.radius }),
-      t('stations_count', { count: count })
-    );
-  }
   
   if (!document.getElementById('panel').classList.contains('hidden') && state.currentStationData) {
     renderPanel(state.currentStationData);

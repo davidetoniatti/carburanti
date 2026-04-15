@@ -109,6 +109,11 @@ function bindControls() {
   const doSearch = async () => {
     const query = addressInput.value.trim();
     if (!query) return;
+    
+    // Close panels when searching by place
+    closePanel();
+    closeHistoryPanel();
+    
     setStatus(t('loading'));
     try {
       const data = await geocodeAddress(query, state.lang);
