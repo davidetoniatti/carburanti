@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"ohmypieno/internal/app"
 )
@@ -36,7 +37,15 @@ func TestSmoke_FullApp(t *testing.T) {
 		baseURL = mockUpstream.URL
 	}
 
-	application, err := app.New(baseURL, staticFiles)
+	cfg := &app.Config{
+		BaseURL:      baseURL,
+		Port:         "8080",
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+		IdleTimeout:  5 * time.Second,
+	}
+
+	application, err := app.New(cfg, staticFiles)
 	if err != nil {
 		t.Fatalf("failed to create app: %v", err)
 	}

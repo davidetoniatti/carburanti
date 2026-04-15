@@ -21,11 +21,16 @@ type App struct {
 	cache  *cache.Cache[any]
 }
 
-func New(baseURL string, staticFiles embed.FS) (*App, error) {
+func New(cfg *Config, staticFiles embed.FS) (*App, error) {
 	c := cache.New[any]()
-	apiClient := api.NewClient(baseURL, c)
+	apiClient := api.NewClient(cfg.BaseURL, c)
 	geocodeClient := api.NewNominatimClient(c)
 	h := handlers.NewServer(apiClient, geocodeClient)
+	h.Config.LatMin = cfg.LatMin
+	h.Config.LatMax = cfg.LatMax
+	h.Config.LngMin = cfg.LngMin
+	h.Config.LngMax = cfg.LngMax
+	h.Config.MaxRadius = cfg.MaxRadius
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/search", h.SearchHandler)
@@ -44,9 +49,9 @@ func New(baseURL string, staticFiles embed.FS) (*App, error) {
 
 	srv := &http.Server{
 		Handler:      handler,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		IdleTimeout:  cfg.IdleTimeout,
 	}
 
 	return &App{
@@ -130,14 +135,25 @@ func (w gzipResponseWriter) Flush() {
 
 func gzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") ||
+			r.Header.Get("Sec-WebSocket-Key") != "" {
 			next.ServeHTTP(w, r)
 			return
 		}
+
+		// Don't compress if already compressed or if it's an image/media
+		// This is a simple check, could be more exhaustive
+		if w.Header().Get("Content-Encoding") != "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		w.Header().Set("Vary", "Accept-Encoding")
 		w.Header().Set("Content-Encoding", "gzip")
+
 		gz := gzip.NewWriter(w)
 		defer gz.Close()
+
 		gzw := gzipResponseWriter{Writer: gz, ResponseWriter: w}
 		next.ServeHTTP(gzw, r)
 	})

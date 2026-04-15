@@ -47,6 +47,11 @@ func (m *mockStationProvider) GeocodeWithContext(ctx context.Context, query, lan
 func TestSearchHandler_DeepValidation(t *testing.T) {
 	mock := &mockStationProvider{}
 	srv := NewServer(mock, mock)
+	srv.Config.LatMin = 35.0
+	srv.Config.LatMax = 48.0
+	srv.Config.LngMin = 6.0
+	srv.Config.LngMax = 19.0
+	srv.Config.MaxRadius = 50
 
 	t.Run("Valid Search with Rules", func(t *testing.T) {
 		mock.searchFunc = func(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error) {
@@ -91,7 +96,7 @@ func TestSearchHandler_DeepValidation(t *testing.T) {
 					{
 						ID: 31459, Name: "31459 Station",
 						Fuels: []models.Fuel{
-							{FuelID: 3, Price: 1.699, Name: "Metano", IsSelf: false},
+							{FuelID: 5, Price: 1.699, Name: "Metano", IsSelf: false},
 							{FuelID: 4, Price: 0.779, Name: "GPL", IsSelf: false},
 						},
 					},
@@ -164,6 +169,11 @@ func TestSearchHandler_CacheMutationReproduction(t *testing.T) {
 		},
 	}
 	srv := NewServer(mock, mock)
+	srv.Config.LatMin = 35.0
+	srv.Config.LatMax = 48.0
+	srv.Config.LngMin = 6.0
+	srv.Config.LngMax = 19.0
+	srv.Config.MaxRadius = 50
 
 	req1 := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0&fuel=1", nil)
 	rr1 := httptest.NewRecorder()
@@ -206,6 +216,11 @@ func TestSearchHandler_Concurrency(t *testing.T) {
 		},
 	}
 	srv := NewServer(mock, mock)
+	srv.Config.LatMin = 35.0
+	srv.Config.LatMax = 48.0
+	srv.Config.LngMin = 6.0
+	srv.Config.LngMax = 19.0
+	srv.Config.MaxRadius = 50
 
 	const workers = 20
 	errChan := make(chan error, workers)
@@ -246,6 +261,11 @@ func TestGeocodeHandler(t *testing.T) {
 		},
 	}
 	srv := NewServer(mock, mock)
+	srv.Config.LatMin = 35.0
+	srv.Config.LatMax = 48.0
+	srv.Config.LngMin = 6.0
+	srv.Config.LngMax = 19.0
+	srv.Config.MaxRadius = 50
 	t.Run("Success", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/api/geocode?q=roma", nil)
 		rr := httptest.NewRecorder()
@@ -263,6 +283,11 @@ func TestStationHandler_DeepValidation(t *testing.T) {
 		},
 	}
 	srv := NewServer(mock, mock)
+	srv.Config.LatMin = 35.0
+	srv.Config.LatMax = 48.0
+	srv.Config.LngMin = 6.0
+	srv.Config.LngMax = 19.0
+	srv.Config.MaxRadius = 50
 	t.Run("Valid ID", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/api/station?id=123", nil)
 		rr := httptest.NewRecorder()

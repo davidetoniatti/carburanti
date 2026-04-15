@@ -102,8 +102,7 @@ func (c *Client) SearchZoneWithContext(ctx context.Context, lat, lng float64, ra
 			return nil, err
 		}
 
-		// Use background context for the actual request so it's not canceled by the first caller
-		respBody, err := c.doRequest(context.Background(), "POST", c.BaseURL+"/search/zone", body)
+		respBody, err := c.doRequest(ctx, "POST", c.BaseURL+"/search/zone", body)
 		if err != nil {
 			return nil, err
 		}
@@ -141,7 +140,7 @@ func (c *Client) GetServiceAreaWithContext(ctx context.Context, id int) (*models
 	// Coalesce station detail requests too
 	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
 		url := fmt.Sprintf("%s/registry/servicearea/%d", c.BaseURL, id)
-		respBody, err := c.doRequest(context.Background(), "GET", url, nil)
+		respBody, err := c.doRequest(ctx, "GET", url, nil)
 		if err != nil {
 			return nil, err
 		}

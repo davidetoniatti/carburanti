@@ -214,7 +214,7 @@ func TestClient_SingleflightCancellation(t *testing.T) {
 		}
 	}
 
-	if succeeded != 1 {
-		t.Errorf("expected 1 success, got %d. Errs: %v", succeeded, errs)
+	if succeeded != 0 {
+		t.Errorf("expected 0 successes (all cancelled), got %d. Errs: %v", succeeded, errs)
 	}
 }

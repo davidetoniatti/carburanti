@@ -56,7 +56,7 @@ func (c *NominatimClient) GeocodeWithContext(ctx context.Context, query, lang st
 		u := fmt.Sprintf("https://nominatim.openstreetmap.org/search?format=json&q=%s&countrycodes=it&limit=5",
 			url.QueryEscape(query))
 
-		req, err := http.NewRequestWithContext(context.Background(), "GET", u, nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
 		if err != nil {
 			return nil, err
 		}

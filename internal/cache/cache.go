@@ -29,7 +29,7 @@ func New[T any]() *Cache[T] {
 func (c *Cache[T]) Set(key string, value T, duration time.Duration) {
 	var expiration int64
 	if duration > 0 {
-		expiration = time.Now().UnixNano() + duration.Nanoseconds()
+		expiration = time.Now().Add(duration).UnixNano()
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -41,32 +41,18 @@ func (c *Cache[T]) Set(key string, value T, duration time.Duration) {
 
 func (c *Cache[T]) Get(key string) (T, bool) {
 	c.mu.RLock()
+	defer c.mu.RUnlock()
 	it, found := c.items[key]
 	if !found {
-		c.mu.RUnlock()
 		var zero T
 		return zero, false
 	}
 
 	if it.expiration > 0 && time.Now().UnixNano() > it.expiration {
-		c.mu.RUnlock()
-		c.mu.Lock()
-		defer c.mu.Unlock()
-
-		// Double check after lock
-		it, found = c.items[key]
-		if found && (it.expiration == 0 || time.Now().UnixNano() <= it.expiration) {
-			return it.value, true // Fresh value written between RUnlock and Lock
-		}
-
-		if found {
-			delete(c.items, key)
-		}
 		var zero T
 		return zero, false
 	}
 
-	defer c.mu.RUnlock()
 	return it.value, true
 }
 
