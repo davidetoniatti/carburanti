@@ -1,6 +1,6 @@
 {
-  "name": "Carburanti - Fuel Prices",
-  "short_name": "Carburanti",
+  "name": "OhMyPieno - Fuel Prices",
+  "short_name": "OhMyPieno",
   "description": "Find the cheapest fuel prices in Italy",
   "start_url": "/",
   "display": "standalone",

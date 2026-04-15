@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"carburanti/internal/models"
+	"ohmypieno/internal/models"
 )
 
 type mockStationProvider struct {

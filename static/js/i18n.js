@@ -2,7 +2,7 @@ import { state } from './state.js';
 
 export const translations = {
   en: {
-    title: "Fuel Prices",
+    title: "OhMyPieno",
     fuel_label: "FUEL TYPE",
     loading: "Loading...",
     radius_label: "RADIUS (km)",
@@ -27,7 +27,7 @@ export const translations = {
     error: "Error: {msg}",
     nd: "N/A",
     open_in_map: "OPEN IN MAP",
-    fuel_prices: "FUEL PRICES",
+    fuel_prices: "OHMYPIENO",
     weekly_hours: "WEEKLY HOURS",
     contacts: "CONTACTS",
     no_prices: "No prices available",
@@ -49,7 +49,7 @@ export const translations = {
     open: "OP",
   },
   it: {
-    title: "Prezzi Carburanti",
+    title: "OhMyPieno",
     fuel_label: "CARBURANTE",
     loading: "Caricamento...",
     radius_label: "RAGGIO (km)",
@@ -74,7 +74,7 @@ export const translations = {
     error: "Errore: {msg}",
     nd: "N/D",
     open_in_map: "APRI IN MAPPA",
-    fuel_prices: "PREZZI CARBURANTI",
+    fuel_prices: "OHMYPIENO",
     weekly_hours: "ORARI SETTIMANALI",
     contacts: "CONTATTI",
     no_prices: "Nessun prezzo disponibile",

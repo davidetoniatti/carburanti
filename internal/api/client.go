@@ -12,8 +12,8 @@ import (
 
 	"golang.org/x/sync/singleflight"
 
-	"carburanti/internal/cache"
-	"carburanti/internal/models"
+	"ohmypieno/internal/cache"
+	"ohmypieno/internal/models"
 )
 
 type StationProvider interface {
@@ -55,7 +55,7 @@ func (c *Client) doRequest(ctx context.Context, method, url string, body []byte)
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; CarburantiApp/1.0)")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; OhMyPienoApp/1.0)")
 	req.Header.Set("Accept", "application/json")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")

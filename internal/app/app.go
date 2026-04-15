@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"carburanti/internal/api"
-	"carburanti/internal/cache"
-	"carburanti/internal/handlers"
+	"ohmypieno/internal/api"
+	"ohmypieno/internal/cache"
+	"ohmypieno/internal/handlers"
 )
 
 type App struct {

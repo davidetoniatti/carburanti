@@ -6,7 +6,7 @@ import { updateUILanguage, setStatus, closePanel, toggleHistoryPanel, closeHisto
 
 document.addEventListener('DOMContentLoaded', bootstrapApp);
 
-const defaultZoom = 17;
+const defaultZoom = 15;
 
 async function bootstrapApp() {
   const browserLang = navigator.language.split('-')[0];

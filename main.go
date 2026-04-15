@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"carburanti/internal/app"
+	"ohmypieno/internal/app"
 )
 
 //go:embed static
@@ -17,7 +17,7 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	baseURL := os.Getenv("CARBURANTI_API_URL")
+	baseURL := os.Getenv("OHMYPIENO_API_URL")
 	if baseURL == "" {
 		baseURL = "https://carburanti.mise.gov.it/ospzApi"
 	}

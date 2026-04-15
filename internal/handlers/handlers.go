@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"carburanti/internal/api"
-	"carburanti/internal/models"
+	"ohmypieno/internal/api"
+	"ohmypieno/internal/models"
 )
 
 const (

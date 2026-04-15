@@ -7,7 +7,5 @@ services:
       - "8080:8080"
     environment:
       - PORT=8080
-      # - CARBURANTI_API_URL=https://carburanti.mise.gov.it/ospzApi
+      - OHMYPIENO_API_URL=https://carburanti.mise.gov.it/ospzApi
     restart: unless-stopped
-    # If you want to use an external .env file, uncomment the following line:
-    # env_file: .env

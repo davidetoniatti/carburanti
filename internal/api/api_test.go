@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"carburanti/internal/cache"
-	"carburanti/internal/models"
+	"ohmypieno/internal/cache"
+	"ohmypieno/internal/models"
 )
 
 func TestClient_GetFuels(t *testing.T) {
@@ -102,7 +102,7 @@ func TestClient_ErrorHandling(t *testing.T) {
 	c := cache.New[any]()
 	client := NewClient(server.URL, c)
 
-	_, err := client.GetFuels()
+	_, err := client.SearchZone(0, 0, 100)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

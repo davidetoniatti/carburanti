@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/sync/singleflight"
 
-	"carburanti/internal/cache"
+	"ohmypieno/internal/cache"
 )
 
 type Geocoder interface {
@@ -63,7 +63,7 @@ func (c *NominatimClient) GeocodeWithContext(ctx context.Context, query, lang st
 		if safeLang != "" {
 			req.Header.Set("Accept-Language", safeLang)
 		}
-		req.Header.Set("User-Agent", "CarburantiApp/1.0")
+		req.Header.Set("User-Agent", "OhMyPienoApp/1.0")
 
 		resp, err := c.HTTPClient.Do(req)
 		if err != nil {

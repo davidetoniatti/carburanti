@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"carburanti/internal/app"
+	"ohmypieno/internal/app"
 )
 
 func TestSmoke_FullApp(t *testing.T) {
@@ -31,7 +31,7 @@ func TestSmoke_FullApp(t *testing.T) {
 	defer mockUpstream.Close()
 
 	// Set up a full app instance
-	baseURL := os.Getenv("CARBURANTI_API_URL")
+	baseURL := os.Getenv("OHMYPIENO_API_URL")
 	if baseURL == "" {
 		baseURL = mockUpstream.URL
 	}

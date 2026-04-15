@@ -152,7 +152,7 @@ body {
   border-radius: 8px;
   overflow: visible; /* Changed from hidden to allow dropdown */
   transition: border-color .2s;
-  max-width: 300px;
+  max-width: 600px;
   flex: 1;
   position: relative; /* Added for dropdown positioning */
 }
@@ -475,6 +475,7 @@ select:hover { border-color: var(--accent); }
 @media (max-width: 900px) {
   #logo { display: none; }
   #filterToggle { display: flex; }
+
   
   #controls {
     position: fixed;
@@ -500,8 +501,36 @@ select:hover { border-color: var(--accent); }
     visibility: hidden;
     transition: transform .3s cubic-bezier(.4,0,.2,1), visibility 0s .3s;
   }
+
+  #historyPanel {
+    position: fixed;
+    top: var(--topbar-h);
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 1150;
+    overflow-y: auto;
+    transform: translateY(20dvh);
+    visibility: visible;
+    transition: transform .3s cubic-bezier(.4,0,.2,1), visibility .3s;
+    border-radius: 12px 12px 0 0;
+  }
+  #historyPanel.hidden { 
+    transform: translateY(120%); 
+    visibility: hidden;
+    transition: transform .3s cubic-bezier(.4,0,.2,1), visibility 0s .3s;
+  }
   
   #legend { display: none; }
+
+  .search-wrap {
+    max-width: 100%
+  }
+  select {
+    width: 100%;
+  }
 }
 
 .leaflet-tile { filter: brightness(0.7) saturate(0.4) hue-rotate(180deg) invert(0.9); }
