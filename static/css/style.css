@@ -66,18 +66,40 @@ body {
   gap: 16px;
 }
 
+#logo-container {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
 #logo {
   display: flex;
   align-items: center;
   gap: 8px;
   font-family: 'Space Mono', monospace;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.05em;
   color: var(--text);
   flex-shrink: 0;
 }
 #logo em { color: var(--accent); font-style: normal; }
+
+.beta-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbbf24; /* yellow-400 */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: -2px;
+  opacity: 0.8;
+}
+
+/* -- CORNER RIBBON -- */
+.beta-ribbon {
+  display: none;
+  visibility: hidden;
+}
 
 #controls-container {
   display: flex;
@@ -523,9 +545,39 @@ select:hover { border-color: var(--accent); }
 
 /* -- MOBILE RESPONSIVE -- */
 @media (max-width: 900px) {
-  #logo { display: none; }
+  #logo-container { display: none; }
   #filterToggle { display: flex; }
 
+
+  .beta-ribbon {
+    display: block;
+    visibility: visible;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 80px;
+    height: 80px;
+    overflow: hidden;
+    z-index: 2000;
+    pointer-events: none;
+  }
+
+  .beta-ribbon span {
+    position: absolute;
+    display: block;
+    width: 120px;
+    padding: 4px 0;
+    background-color: #fbbf24;
+    color: #111;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    right: -10px;
+    bottom: 15px;
+    transform: rotate(45deg);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
   
   #controls {
     position: fixed;
