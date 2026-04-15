@@ -68,9 +68,10 @@ func TestSearchHandler_DeepValidation(t *testing.T) {
 				},
 			}, nil
 		}
+		searchHandler := srv.ValidateSearchMiddleware(http.HandlerFunc(srv.SearchHandler))
 		req := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0&fuel=1", nil)
 		rr := httptest.NewRecorder()
-		srv.SearchHandler(rr, req)
+		searchHandler.ServeHTTP(rr, req)
 
 		if rr.Code != http.StatusOK {
 			t.Fatalf("expected 200, got %d", rr.Code)
@@ -104,11 +105,12 @@ func TestSearchHandler_DeepValidation(t *testing.T) {
 			}, nil
 		}
 
+		searchHandler := srv.ValidateSearchMiddleware(http.HandlerFunc(srv.SearchHandler))
 		// GPL (ID 4)
 		{
 			req := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0&fuel=4", nil)
 			rr := httptest.NewRecorder()
-			srv.SearchHandler(rr, req)
+			searchHandler.ServeHTTP(rr, req)
 			var res models.SearchResponse
 			json.NewDecoder(rr.Body).Decode(&res)
 			if res.Results[0].SelectedPrice != 0.779 {
@@ -120,7 +122,7 @@ func TestSearchHandler_DeepValidation(t *testing.T) {
 		{
 			req := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0&fuel=5", nil)
 			rr := httptest.NewRecorder()
-			srv.SearchHandler(rr, req)
+			searchHandler.ServeHTTP(rr, req)
 			var res models.SearchResponse
 			json.NewDecoder(rr.Body).Decode(&res)
 			if res.Results[0].SelectedPrice != 1.699 {
@@ -130,21 +132,23 @@ func TestSearchHandler_DeepValidation(t *testing.T) {
 	})
 
 	t.Run("Invalid Method", func(t *testing.T) {
+		searchHandler := srv.ValidateSearchMiddleware(http.HandlerFunc(srv.SearchHandler))
 		req := httptest.NewRequest("POST", "/api/search", nil)
 		rr := httptest.NewRecorder()
-		srv.SearchHandler(rr, req)
+		searchHandler.ServeHTTP(rr, req)
 		if rr.Code != http.StatusMethodNotAllowed {
 			t.Errorf("expected 405, got %d", rr.Code)
 		}
 	})
 
 	t.Run("Upstream Failure", func(t *testing.T) {
+		searchHandler := srv.ValidateSearchMiddleware(http.HandlerFunc(srv.SearchHandler))
 		mock.searchFunc = func(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error) {
 			return nil, errors.New("boom")
 		}
 		req := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0", nil)
 		rr := httptest.NewRecorder()
-		srv.SearchHandler(rr, req)
+		searchHandler.ServeHTTP(rr, req)
 		if rr.Code != http.StatusBadGateway {
 			t.Errorf("expected 502, got %d", rr.Code)
 		}
@@ -175,9 +179,11 @@ func TestSearchHandler_CacheMutationReproduction(t *testing.T) {
 	srv.Config.LngMax = 19.0
 	srv.Config.MaxRadius = 50
 
+	searchHandler := srv.ValidateSearchMiddleware(http.HandlerFunc(srv.SearchHandler))
+
 	req1 := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0&fuel=1", nil)
 	rr1 := httptest.NewRecorder()
-	srv.SearchHandler(rr1, req1)
+	searchHandler.ServeHTTP(rr1, req1)
 	var res1 models.SearchResponse
 	json.NewDecoder(rr1.Body).Decode(&res1)
 	if res1.Results[0].SelectedFuelName != "Benzina" {
@@ -186,7 +192,7 @@ func TestSearchHandler_CacheMutationReproduction(t *testing.T) {
 
 	req2 := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0&fuel=2", nil)
 	rr2 := httptest.NewRecorder()
-	srv.SearchHandler(rr2, req2)
+	searchHandler.ServeHTTP(rr2, req2)
 	var res2 models.SearchResponse
 	json.NewDecoder(rr2.Body).Decode(&res2)
 	if res2.Results[0].SelectedFuelName != "Gasolio" {
@@ -222,6 +228,8 @@ func TestSearchHandler_Concurrency(t *testing.T) {
 	srv.Config.LngMax = 19.0
 	srv.Config.MaxRadius = 50
 
+	searchHandler := srv.ValidateSearchMiddleware(http.HandlerFunc(srv.SearchHandler))
+
 	const workers = 20
 	errChan := make(chan error, workers)
 	for i := 0; i < workers; i++ {
@@ -234,7 +242,7 @@ func TestSearchHandler_Concurrency(t *testing.T) {
 			path := fmt.Sprintf("/api/search?lat=41.0&lng=12.0&fuel=%d", fid)
 			req := httptest.NewRequest("GET", path, nil)
 			rr := httptest.NewRecorder()
-			srv.SearchHandler(rr, req)
+			searchHandler.ServeHTTP(rr, req)
 			var res models.SearchResponse
 			json.NewDecoder(rr.Body).Decode(&res)
 			if res.Results[0].SelectedFuelName != name {

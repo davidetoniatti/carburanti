@@ -33,7 +33,7 @@ func New(cfg *Config, staticFiles embed.FS) (*App, error) {
 	h.Config.MaxRadius = cfg.MaxRadius
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/search", h.SearchHandler)
+	mux.Handle("/api/search", h.ValidateSearchMiddleware(http.HandlerFunc(h.SearchHandler)))
 	mux.HandleFunc("/api/station", h.StationHandler)
 	mux.HandleFunc("/api/fuels", h.FuelsHandler)
 	mux.HandleFunc("/api/geocode", h.GeocodeHandler)
