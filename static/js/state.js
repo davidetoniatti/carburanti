@@ -19,6 +19,7 @@ export const state = {
   lastSearchZoom: null,
   history: [],
   userLocation: null,
+  userLocationMarker: null,
 };
 
 export function addToHistory(station) {

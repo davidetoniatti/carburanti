@@ -170,7 +170,7 @@ export function renderPanel(station) {
   
   const addr = station.address || t('addr_not_available');
   const mapsUrl = station.location
-    ? `https://www.openstreetmap.org/?mlat=${station.location.lat}&mlon=${station.location.lng}&zoom=17`
+    ? `https://www.google.com/maps/search/?api=1&query=${station.location.lat},${station.location.lng}`
     : '#';
     
   const dist = (state.userLocation && station.location) 

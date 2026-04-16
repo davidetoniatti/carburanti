@@ -1,7 +1,7 @@
 import { state, getStateFromURL, updateURL, addToHistory } from './state.js';
 import { hasLocale, t } from './i18n.js';
 import { fetchFuels, searchStations, geocodeAddress, fetchStationDetails } from './api.js';
-import { initMap, syncMarkers, selectMarker } from './map.js';
+import { initMap, syncMarkers, selectMarker, setUserLocationMarker } from './map.js';
 import { updateUILanguage, closePanelUI, toggleHistoryPanel, closeHistoryPanelUI, renderPanel, showToast, bindHistoryEvents } from './ui.js';
 import { Sheet } from './Sheet.js';
 import { checkTutorial } from './tutorial.js';
@@ -63,6 +63,7 @@ async function bootstrapApp() {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         state.userLocation = { lat: latitude, lng: longitude };
+        setUserLocationMarker(latitude, longitude);
         state.map.setView([latitude, longitude], MAP_CONFIG.DEFAULT_ZOOM);
         performSearch(latitude, longitude);
       },
@@ -126,6 +127,7 @@ function bindControls() {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         state.userLocation = { lat: latitude, lng: longitude };
+        setUserLocationMarker(latitude, longitude);
         state.map.setView([latitude, longitude], MAP_CONFIG.DEFAULT_ZOOM);
         performSearch(latitude, longitude);
       },

@@ -211,3 +211,23 @@ export function selectMarker(id) {
     mapEl?.classList.remove('has-selection');
   }
 }
+
+export function setUserLocationMarker(lat, lng) {
+  if (!state.map) return;
+
+  if (state.userLocationMarker) {
+    state.userLocationMarker.setLatLng([lat, lng]);
+  } else {
+    const icon = L.divIcon({
+      className: 'user-location-marker',
+      html: '<div class="user-location-dot"></div>',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+    state.userLocationMarker = L.marker([lat, lng], { 
+      icon,
+      zIndexOffset: 2000, // Always on top
+      interactive: false 
+    }).addTo(state.map);
+  }
+}
