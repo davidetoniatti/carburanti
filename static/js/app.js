@@ -56,7 +56,26 @@ async function bootstrapApp() {
   new Sheet('panel', 'bottom');
   new Sheet('historyPanel', 'bottom');
   new Sheet('controls', 'top');
-  performSearch(startLat, startLng);
+
+  // If no location in URL, try geolocating
+  if (!urlState.lat && !urlState.lng && navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        state.userLocation = { lat: latitude, lng: longitude };
+        state.map.setView([latitude, longitude], MAP_CONFIG.DEFAULT_ZOOM);
+        performSearch(latitude, longitude);
+      },
+      () => {
+        // Fallback to default search if geo fails
+        performSearch(startLat, startLng);
+      },
+      { timeout: TIMEOUTS.GEO_MS }
+    );
+  } else {
+    performSearch(startLat, startLng);
+  }
+  
   checkTutorial();
 }
 

@@ -1,9 +1,3 @@
-
-/**
- * Sheet.js
- * Unified class to handle both top and bottom sheet interactions.
- */
-
 import { BREAKPOINTS, SHEET_CONFIG } from './constants.js';
 
 export class Sheet {
