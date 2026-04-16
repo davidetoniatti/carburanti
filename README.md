@@ -1,14 +1,15 @@
-# OhMyPieno
+# <samp>OHMY<em style="color: #bb9af7; font-style: normal;">PIENO</em></samp>
 
-Go web application that shows an interactive map of fuel prices in Italy, using real-time data from the official osservaprezzi MISE portal.
+Go web application that shows an interactive map of fuel prices in Italy, using real-time data from the official **MIMIT** (ex MISE) portal.
 
 ## Features
 
-- OpenStreetMap with markers color-coded by price
-- Fuel type selection
-- User GPS localization
-- Search by map click or current position
-- Detailed panel with full prices, opening hours, and contact information
+- **Real-time Data**: Integrated with official Italian Ministry (MIMIT) APIs.
+- **Interactive Map**: OpenStreetMap with markers color-coded by price.
+- **Search**: Search by city/address.
+- **Detail View**: Full price breakdown (Self vs Served), contact info, and distance from your position.
+- **Smart Cache**: High-performance backend caching with request coalescing to minimize upstream load.
+- **3-Mode Theme**: Supports Dark, Light, and System-adaptive themes with real-time switching.
 
 ## Requirements
 
