@@ -31,11 +31,15 @@ async function bootstrapApp() {
   const browserLang = navigator.language.split('-')[0];
   if (hasLocale(browserLang)) state.lang = browserLang;
 
-  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const defaultTheme = systemDark ? 'dark' : 'light';
-  const savedTheme = localStorage.getItem('ohmypieno_theme') || defaultTheme;
-  
+  const savedTheme = localStorage.getItem('ohmypieno_theme') || 'device';
   setTheme(savedTheme);
+
+  // Listen for live system theme changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (state.theme === 'device') {
+      applyThemeByMode('device');
+    }
+  });
 
   elements.langSelect.value = state.lang;
   updateUILanguage();
@@ -82,15 +86,27 @@ async function bootstrapApp() {
   checkTutorial();
 }
 
-function setTheme(theme) {
-  state.theme = theme;
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('ohmypieno_theme', theme);
+function setTheme(mode) {
+  state.theme = mode;
+  localStorage.setItem('ohmypieno_theme', mode);
+  applyThemeByMode(mode);
+}
+
+function applyThemeByMode(mode) {
+  let activeTheme = mode;
+  if (mode === 'device') {
+    activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  
+  document.documentElement.setAttribute('data-theme', activeTheme);
+  document.documentElement.setAttribute('data-theme-mode', mode);
 }
 
 function toggleTheme() {
-  const next = state.theme === 'dark' ? 'light' : 'dark';
-  setTheme(next);
+  const modes = ['device', 'dark', 'light'];
+  const currentIndex = modes.indexOf(state.theme);
+  const nextIndex = (currentIndex + 1) % modes.length;
+  setTheme(modes[nextIndex]);
 }
 
 async function loadFuels(defaultFuelId) {

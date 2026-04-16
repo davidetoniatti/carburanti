@@ -64,11 +64,22 @@ body {
 }
 #themeToggle:hover { border-color: var(--accent); color: var(--accent); }
 
-#themeToggle .sun-icon { display: block; }
-#themeToggle .moon-icon { display: none; }
+#themeToggle .sun-icon, 
+#themeToggle .moon-icon, 
+#themeToggle .device-icon, 
+#themeToggle .mobile-icon { display: none; }
 
-[data-theme="light"] #themeToggle .sun-icon { display: none; }
-[data-theme="light"] #themeToggle .moon-icon { display: block; }
+[data-theme-mode="light"] #themeToggle .sun-icon { display: block; }
+[data-theme-mode="dark"] #themeToggle .moon-icon { display: block; }
+
+/* Show monitor on desktop, mobile on phone when in device mode */
+[data-theme-mode="device"] #themeToggle .device-icon { display: block; }
+
+@media (max-width: 900px) {
+  [data-theme-mode="device"] #themeToggle .device-icon { display: none; }
+  [data-theme-mode="device"] #themeToggle .mobile-icon { display: block; }
+}
+
 [data-theme="light"] .leaflet-tile { filter: none !important; }
 
 
