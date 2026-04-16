@@ -1,4 +1,6 @@
-:root {
+:root,
+[data-theme="dark"]
+{
   --bg: #1b1d2b;
   --surface: #222436;
   --surface2: #2a2e42;
@@ -14,7 +16,6 @@
   --topbar-h: 60px;
   --panel-w: 380px;
 
-  /* Breakpoints & Snap points */
   --desktop-bp: 900px;
   --peek-vh: 50dvh;
   --full-vh: 0dvh;

@@ -31,9 +31,11 @@ async function bootstrapApp() {
   const browserLang = navigator.language.split('-')[0];
   if (hasLocale(browserLang)) state.lang = browserLang;
 
-  const savedTheme = localStorage.getItem('ohmypieno_theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  state.theme = savedTheme;
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const defaultTheme = systemDark ? 'dark' : 'light';
+  const savedTheme = localStorage.getItem('ohmypieno_theme') || defaultTheme;
+  
+  setTheme(savedTheme);
 
   elements.langSelect.value = state.lang;
   updateUILanguage();
