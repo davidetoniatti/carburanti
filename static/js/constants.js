@@ -1,9 +1,3 @@
-
-/**
- * constants.js
- * Global configuration and magic numbers.
- */
-
 export const BREAKPOINTS = {
     DESKTOP: 900
 };
@@ -37,3 +31,13 @@ export const SHEET_CONFIG = {
     FULL_HEIGHT_VH: 0,
     HIDDEN_HEIGHT_VH: 100
 };
+
+export const TUTORIAL_STEPS = [
+    { textKey: 'tutorial_step1', highlight: null },
+    { textKey: 'tutorial_step2', highlight: '.price-marker' },
+    { textKey: 'tutorial_step3', highlight: '.search-wrap' },
+    { textKey: 'tutorial_step4', highlight: '#filterToggle' },
+    { textKey: 'tutorial_step5', highlight: '#historyToggle' },
+    { textKey: 'tutorial_step6', highlight: '#themeToggle' },
+    { textKey: 'tutorial_step7', highlight: '#locateBtn' },
+];

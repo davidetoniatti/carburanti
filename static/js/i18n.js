@@ -45,14 +45,18 @@ export const translations = {
     phone: "PHONE",
     email: "EMAIL",
     web: "WEB",
-    tutorial_title: "Welcome to OhMyPieno",
-    tutorial_step1: "Find the cheapest fuel prices around you. Let's see how it works!",
-    tutorial_step2: "Select your fuel type and search radius. Prices will update automatically.",
-    tutorial_step3: "Search for a specific address or use the 'Locate' button to find stations near you.",
-    tutorial_step4: "Click on any station to see details and price history. Your recent views are saved in the history panel.",
     btn_next: "Next",
+    btn_back: "Back",
     btn_skip: "Skip",
     btn_finish: "Start Exploring",
+    tutorial_title: "Welcome to",
+    tutorial_step1: "Find the cheapest fuel prices near you. Data comes from the official MIMIT API.",
+    tutorial_step2: "Use the map and click any station marker to view fuel prices and other details.",
+    tutorial_step3: "Use the search bar to find stations in a specific city or near an address.",
+    tutorial_step4: "Choose your fuel type and search radius.",
+    tutorial_step5: "Click the history button to view your recently viewed stations.",
+    tutorial_step6: "Switch between dark and light mode based on your preference.",
+    tutorial_step7: "Use geolocation to find nearby stations.",
   },
   it: {
     title: "OhMyPieno",
@@ -98,19 +102,25 @@ export const translations = {
     phone: "TELEFONO",
     email: "EMAIL",
     web: "WEB",
-    tutorial_title: "Benvenuto su OhMyPieno",
-    tutorial_step1: "Trova i prezzi dei carburanti più convenienti vicino a te. Vediamo come funziona!",
-    tutorial_step2: "Seleziona il tipo di carburante e il raggio di ricerca. I prezzi si aggiorneranno automaticamente.",
-    tutorial_step3: "Cerca un indirizzo specifico o usa il tasto 'Localizzami' per trovare stazioni vicino a te.",
-    tutorial_step4: "Clicca su ogni stazione per vedere i dettagli e lo storico prezzi. Le tue visualizzazioni recenti sono salvate nella cronologia.",
     btn_next: "Avanti",
+    btn_back: "Indietro",
     btn_skip: "Salta",
     btn_finish: "Inizia a Esplorare",
+    tutorial_title: "Benvenuto su",
+    tutorial_step1: "Trova i prezzi del carburante più convenienti vicino a te. I dati provengono dall'API ufficiale del MIMIT.",
+    tutorial_step2: "Usa la mappa e tocca un indicatore di stazione per visualizzare i prezzi del carburante e altri dettagli.",
+    tutorial_step3: "Usa la barra di ricerca per trovare le stazioni in una città specifica o vicino a un indirizzo.",
+    tutorial_step4: "Scegli il tipo di carburante e il raggio di ricerca.",
+    tutorial_step5: "Tocca il pulsante della cronologia per visualizzare le stazioni visualizzate di recente.",
+    tutorial_step6: "Passa dalla modalità chiara a quella scura in base alle tue preferenze.",
+    tutorial_step7: "Usa la geolocalizzazione per trovare le stazioni nelle vicinanze."
   }
 };
 
 export function t(key, params = {}) {
-  let text = translations[state.lang][key] || key;
+  let lang = state.lang;
+  if (!translations[lang]) lang = 'en';
+  let text = translations[lang][key] || key;
   Object.keys(params).forEach(p => {
     text = text.replace(`{${p}}`, params[p]);
   });

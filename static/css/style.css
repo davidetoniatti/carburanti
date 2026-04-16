@@ -22,7 +22,7 @@
 }
 
 [data-theme="light"] {
-  --bg: #f3f4f6;
+  --bg: #c0caf5;
   --surface: #ffffff;
   --surface2: #f9fafb;
   --border: #e5e7eb;
@@ -499,8 +499,7 @@ select:hover { border-color: var(--accent); }
 #tutorial-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.0);
   z-index: 3000;
   display: flex;
   align-items: center;
@@ -519,7 +518,7 @@ select:hover { border-color: var(--accent); }
   padding: 32px;
   max-width: 400px;
   width: 100%;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
   text-align: center;
 }
 .tutorial-progress {
@@ -544,8 +543,8 @@ select:hover { border-color: var(--accent); }
   font-family: 'Space Mono', monospace;
   font-size: 20px;
 }
+#tutorial-title em { color: var(--accent); font-style: normal; }
 .tutorial-modal p {
-  color: var(--text-muted);
   line-height: 1.6;
   margin-bottom: 32px;
   min-height: 4.8em;
@@ -554,7 +553,20 @@ select:hover { border-color: var(--accent); }
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
+.tutorial-actions .spacer {
+  flex: 1;
+}
+
+.tutorial-highlight {
+  position: relative;
+  z-index: 4000 !important;
+  box-shadow: 0 0 0 4px var(--accent), 0 0 20px var(--accent) !important;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
 .btn-text {
   background: none;
   border: none;
