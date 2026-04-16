@@ -33,6 +33,8 @@
           </button>
         </div>
 
+        <div id="desktopControlsSlot"></div>
+
         <div id="action-buttons">
           <button id="filterToggle" aria-label="Toggle filters">            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
           </button>
@@ -51,30 +53,7 @@
       </div>
     </header>
 
-    <div id="controls" class="mobile-hidden">
-      <div class="select-wrap">
-        <select id="fuelSelect">
-          <option value="" data-i18n="loading">Loading...</option>
-        </select>
-      </div>
-      <div class="select-wrap">
-        <select id="radiusSelect">
-          <option value="2">2 km</option>
-          <option value="5" selected>5 km</option>
-          <option value="10">10 km</option>
-          <option value="20">20 km</option>
-        </select>
-      </div>
-      <div class="select-wrap">
-        <select id="langSelect">
-          <option value="en">EN</option>
-          <option value="it">IT</option>
-        </select>
-      </div>
-      <div class="sheet-header">
-        <div class="sheet-handle"></div>
-      </div>
-    </div>
+    <div id="mobileControlsSlot"></div>
 
     <!-- Map -->
     <div id="map-container">
@@ -116,6 +95,31 @@
         <span class="legend-label" data-i18n="price_low">low</span>
         <div class="legend-gradient"></div>
         <span class="legend-label" data-i18n="price_high">high</span>
+      </div>
+    </div>
+
+    <div id="controls" class="mobile-hidden">
+      <div class="select-wrap">
+        <select id="fuelSelect">
+          <option value="" data-i18n="loading">Loading...</option>
+        </select>
+      </div>
+      <div class="select-wrap">
+        <select id="radiusSelect">
+          <option value="2">2 km</option>
+          <option value="5" selected>5 km</option>
+          <option value="10">10 km</option>
+          <option value="20">20 km</option>
+        </select>
+      </div>
+      <div class="select-wrap">
+        <select id="langSelect">
+          <option value="en">EN</option>
+          <option value="it">IT</option>
+        </select>
+      </div>
+      <div class="sheet-header">
+        <div class="sheet-handle"></div>
       </div>
     </div>
   </div>

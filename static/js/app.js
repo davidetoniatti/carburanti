@@ -41,6 +41,18 @@ async function bootstrapApp() {
     }
   });
 
+  // Responsive Controls Slots
+  const mq = window.matchMedia("(max-width: 900px)");
+  const placeControls = (e) => {
+    if (e.matches) {
+      elements.mobileControlsSlot.appendChild(elements.controls);
+    } else {
+      elements.desktopControlsSlot.appendChild(elements.controls);
+    }
+  };
+  placeControls(mq);
+  mq.addEventListener("change", placeControls);
+
   elements.langSelect.value = state.lang;
   updateUILanguage();
 
