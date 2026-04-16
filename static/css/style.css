@@ -662,10 +662,9 @@ select:hover { border-color: var(--accent); }
     left: 0;
     right: 0;
     background: var(--surface);
-    border-bottom: 1px solid var(--border);
     flex-direction: column;
     padding: 0 16px 0;
-    padding-top: calc(var(--topbar-h) + 16px);
+    padding-top: calc(var(--topbar-h) + 48px);
     gap: 16px;
     align-items: stretch;
     transition: transform 0.2s;
@@ -711,7 +710,6 @@ select:hover { border-color: var(--accent); }
     bottom: 0; 
     top: auto; 
     border-left: none; 
-    border-top: 1px solid var(--border); 
     visibility: visible; 
     border-radius: 16px 16px 0 0;
     transform: translateY(var(--hidden-vh));
