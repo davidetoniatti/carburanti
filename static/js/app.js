@@ -105,8 +105,10 @@ function bindControls() {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        state.map.setView([pos.coords.latitude, pos.coords.longitude], MAP_CONFIG.DEFAULT_ZOOM);
+        const { latitude, longitude } = pos.coords;
+        state.userLocation = { lat: latitude, lng: longitude };
+        state.map.setView([latitude, longitude], MAP_CONFIG.DEFAULT_ZOOM);
+        performSearch(latitude, longitude);
       },
       ()    => showToast(t('pos_error'), 'error'),
       { timeout: TIMEOUTS.GEO_MS }
