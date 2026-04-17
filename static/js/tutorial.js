@@ -36,6 +36,10 @@ export function startTutorial() {
     dotsContainer.className = 'tutorial-progress';
     dotsContainer.id = 'tutorial-dots';
 
+    const iconBox = document.createElement('div');
+    iconBox.className = 'tutorial-icon';
+    iconBox.setAttribute('aria-hidden', 'true');
+
     const title = document.createElement('h2');
     title.id = 'tutorial-title';
 
@@ -65,9 +69,12 @@ export function startTutorial() {
     nextBtn.className = 'btn-primary';
 
     actions.append(backBtn, spacer, skipBtn, nextBtn);
-    modal.append(dotsContainer, title, text, actions);
+    modal.append(dotsContainer, iconBox, title, text, actions);
     overlay.append(modal);
     document.body.appendChild(overlay);
+
+    // Push a history entry so the browser back button dismisses the tutorial.
+    history.pushState({ tutorial: true }, '');
 
     TUTORIAL_STEPS.forEach(() => {
         const dot = document.createElement('span');
@@ -105,6 +112,9 @@ export function startTutorial() {
         backBtn.classList.toggle('hidden', currentIndex === 0);
         nextBtn.textContent = (currentIndex === totalSteps - 1) ? t('btn_finish') : t('btn_next');
 
+        // Safe: step.icon is a static SVG string from constants.js.
+        iconBox.innerHTML = step.icon || '';
+
         clearHighlights();
         if (step.highlight) {
             document.querySelectorAll(step.highlight).forEach(el => el.classList.add('tutorial-highlight'));
@@ -113,11 +123,26 @@ export function startTutorial() {
 
     activeRefresh = updateUI;
 
+    let isFinishing = false;
+    const onPopState = () => finishTutorial();
+
     const finishTutorial = () => {
+        if (isFinishing) return;
+        isFinishing = true;
+
         clearHighlights();
         activeRefresh = null;
+        window.removeEventListener('popstate', onPopState);
         localStorage.setItem(STORAGE_KEYS.TUTORIAL_SEEN, 'true');
         document.removeEventListener('keydown', onKeydown, true);
+
+        // If we're still on the state we pushed, pop it off so we don't leave
+        // an orphan entry. If popstate fired first (user hit back), our state
+        // is already gone and this is a no-op check.
+        if (history.state && history.state.tutorial) {
+            history.back();
+        }
+
         overlay.classList.add('fade-out');
         const remove = () => {
             overlay.remove();
@@ -186,6 +211,7 @@ export function startTutorial() {
     backBtn.addEventListener('click', goBack);
     skipBtn.addEventListener('click', finishTutorial);
     document.addEventListener('keydown', onKeydown, true);
+    window.addEventListener('popstate', onPopState);
 
     updateUI();
     nextBtn.focus();

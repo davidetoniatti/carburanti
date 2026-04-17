@@ -609,6 +609,22 @@ select:hover { border-color: var(--accent); }
   background: var(--accent);
   transform: scale(1.3);
 }
+.tutorial-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  color: var(--accent);
+  background: rgba(187, 154, 247, 0.1);
+  border-radius: 50%;
+}
+[data-theme="light"] .tutorial-icon { background: rgba(152, 84, 241, 0.12); }
+.tutorial-icon svg {
+  width: 28px;
+  height: 28px;
+}
 .tutorial-modal h2 {
   margin-bottom: 16px;
   font-family: 'Space Mono', monospace;
@@ -636,6 +652,13 @@ select:hover { border-color: var(--accent); }
   box-shadow: 0 0 0 4px var(--accent), 0 0 20px var(--accent) !important;
   transition: box-shadow 0.3s ease;
   pointer-events: none;
+  /* Subtle breathing pulse via filter (box-shadow !important can't be
+     overridden by animations; filter doesn't collide). */
+  animation: tutorial-highlight-pulse 2s ease-in-out infinite;
+}
+@keyframes tutorial-highlight-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50%      { filter: drop-shadow(0 0 10px var(--accent)); }
 }
 
 /* -- SHORTCUTS HELP MODAL (reuses tutorial modal shell) -- */
