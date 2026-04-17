@@ -1,0 +1,251 @@
+import { elements } from './dom.js';
+import { t } from './i18n.js';
+import { toggleHistoryPanel } from './ui.js';
+import { closePanel, closeHistoryPanel } from './app.js';
+import { startTutorial } from './tutorial.js';
+
+const FOCUSABLE_SELECTOR = 'button, [href], [tabindex]:not([tabindex="-1"])';
+
+const SHORTCUTS = [
+  { keys: ['Esc'],       labelKey: 'shortcut_escape' },
+  { keys: ['/'],         labelKey: 'shortcut_search' },
+  { keys: ['Ctrl', 'K'], labelKey: 'shortcut_search' },
+  { keys: ['H'],         labelKey: 'shortcut_history' },
+  { keys: ['L'],         labelKey: 'shortcut_locate' },
+  { keys: ['T'],         labelKey: 'shortcut_theme' },
+  { keys: ['R'],         labelKey: 'shortcut_refresh' },
+  { keys: ['?'],         labelKey: 'shortcut_help' },
+];
+
+// True when an element is present in the layout tree (not display:none,
+// not detached). Used to gate shortcuts on target availability instead of
+// viewport width — keyboards attached to mobile devices still work naturally.
+function isRendered(el) {
+  return !!el && el.offsetParent !== null;
+}
+
+function isEditable(el) {
+  if (!el) return false;
+  const tag = el.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  return !!el.isContentEditable;
+}
+
+function hasMod(e) {
+  return e.ctrlKey || e.metaKey;
+}
+
+function focusSearch() {
+  const input = elements.addressSearch;
+  if (!input) return;
+  input.focus();
+  input.select();
+}
+
+function clickIfPresent(el) {
+  if (!el || el.classList.contains('hidden')) return false;
+  el.click();
+  return true;
+}
+
+function closeTopmost() {
+  const help = document.getElementById('shortcuts-help-overlay');
+  if (help) {
+    help.dispatchEvent(new CustomEvent('helpClose'));
+    return true;
+  }
+
+  const sugg = elements.searchSuggestions;
+  if (sugg && !sugg.classList.contains('hidden')) {
+    sugg.classList.add('hidden');
+    return true;
+  }
+
+  if (elements.panel && !elements.panel.classList.contains('hidden')) {
+    closePanel();
+    return true;
+  }
+
+  if (elements.historyPanel && !elements.historyPanel.classList.contains('hidden')) {
+    closeHistoryPanel();
+    return true;
+  }
+
+  // The filter drawer exists only on mobile (the toggle button is hidden on
+  // desktop, so isRendered returns false there and desktop Escape skips this).
+  if (
+    isRendered(elements.filterToggle) &&
+    elements.controls &&
+    !elements.controls.classList.contains('mobile-hidden')
+  ) {
+    elements.controls.classList.add('mobile-hidden');
+    elements.filterToggle.classList.remove('active');
+    return true;
+  }
+
+  return false;
+}
+
+export function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Tutorial owns its own keys; get out of its way.
+    if (document.getElementById('tutorial-overlay')) return;
+
+    // Escape: works in any focus context — let the topmost surface close first.
+    if (e.key === 'Escape') {
+      if (closeTopmost()) e.preventDefault();
+      return;
+    }
+
+    // Ctrl/Cmd+K: universal "open search".
+    if ((e.key === 'k' || e.key === 'K') && hasMod(e)) {
+      e.preventDefault();
+      focusSearch();
+      return;
+    }
+
+    // From here on: single-key shortcuts. Suppress when typing or chording.
+    if (isEditable(document.activeElement) || hasMod(e) || e.altKey) return;
+
+    switch (e.key) {
+      case '/':
+        e.preventDefault();
+        focusSearch();
+        break;
+      case '?':
+        e.preventDefault();
+        openShortcutsHelp();
+        break;
+      case 'h':
+      case 'H':
+        e.preventDefault();
+        toggleHistoryPanel();
+        break;
+      case 'l':
+      case 'L':
+        e.preventDefault();
+        elements.locateBtn?.click();
+        break;
+      case 't':
+      case 'T':
+        e.preventDefault();
+        elements.themeToggle?.click();
+        break;
+      case 'r':
+      case 'R':
+        e.preventDefault();
+        clickIfPresent(elements.searchHereBtn);
+        break;
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Keyboard shortcuts help modal
+// ---------------------------------------------------------------------------
+
+export function openShortcutsHelp() {
+  if (document.getElementById('shortcuts-help-overlay')) return;
+
+  const previouslyFocused = document.activeElement;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'shortcuts-help-overlay';
+
+  const modal = document.createElement('div');
+  modal.className = 'tutorial-modal shortcuts-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'shortcuts-help-title');
+  modal.tabIndex = -1;
+
+  const heading = document.createElement('h2');
+  heading.id = 'shortcuts-help-title';
+  heading.textContent = t('shortcuts_title');
+
+  const list = document.createElement('ul');
+  list.className = 'shortcuts-list';
+  for (const s of SHORTCUTS) {
+    const li = document.createElement('li');
+    const keys = document.createElement('span');
+    keys.className = 'shortcut-keys';
+    s.keys.forEach((k, i) => {
+      const kbd = document.createElement('kbd');
+      kbd.textContent = k;
+      keys.appendChild(kbd);
+      if (i < s.keys.length - 1) keys.append('+');
+    });
+    const label = document.createElement('span');
+    label.className = 'shortcut-label';
+    label.textContent = t(s.labelKey);
+    li.append(keys, label);
+    list.appendChild(li);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'tutorial-actions';
+
+  const replayBtn = document.createElement('button');
+  replayBtn.type = 'button';
+  replayBtn.className = 'btn-text';
+  replayBtn.textContent = t('replay_tutorial');
+
+  const spacer = document.createElement('div');
+  spacer.className = 'spacer';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'btn-primary';
+  closeBtn.textContent = t('close');
+
+  actions.append(replayBtn, spacer, closeBtn);
+  modal.append(heading, list, actions);
+  overlay.append(modal);
+  document.body.appendChild(overlay);
+
+  const close = () => {
+    document.removeEventListener('keydown', onKeydown, true);
+    overlay.removeEventListener('helpClose', close);
+    overlay.classList.add('fade-out');
+    const remove = () => {
+      overlay.remove();
+      if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+        previouslyFocused.focus();
+      }
+    };
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      remove();
+    } else {
+      overlay.addEventListener('transitionend', remove, { once: true });
+    }
+  };
+
+  const onKeydown = (e) => {
+    if (!overlay.isConnected) return;
+    if (e.key === 'Tab') {
+      const focusables = Array.from(modal.querySelectorAll(FOCUSABLE_SELECTOR));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
+
+  replayBtn.addEventListener('click', () => {
+    close();
+    localStorage.removeItem('ohmypieno_tutorial_seen');
+    startTutorial();
+  });
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('helpClose', close);
+  document.addEventListener('keydown', onKeydown, true);
+
+  closeBtn.focus();
+}

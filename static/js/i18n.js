@@ -57,6 +57,17 @@ export const translations = {
     tutorial_step5: "Click the history button to view your recently viewed stations.",
     tutorial_step6: "Switch between dark and light mode based on your preference.",
     tutorial_step7: "Use geolocation to find nearby stations.",
+    shortcuts_title: "Keyboard Shortcuts",
+    shortcut_escape: "Close panel or overlay",
+    shortcut_search: "Focus search",
+    shortcut_history: "Toggle history",
+    shortcut_locate: "Use my position",
+    shortcut_theme: "Cycle theme",
+    shortcut_refresh: "Search this area",
+    shortcut_help: "Show this help",
+    help_btn_label: "Help",
+    replay_tutorial: "Replay tutorial",
+    close: "Close",
   },
   it: {
     title: "OhMyPieno",
@@ -113,7 +124,18 @@ export const translations = {
     tutorial_step4: "Scegli il tipo di carburante e il raggio di ricerca.",
     tutorial_step5: "Tocca il pulsante della cronologia per visualizzare le stazioni visualizzate di recente.",
     tutorial_step6: "Passa dalla modalità chiara a quella scura in base alle tue preferenze.",
-    tutorial_step7: "Usa la geolocalizzazione per trovare le stazioni nelle vicinanze."
+    tutorial_step7: "Usa la geolocalizzazione per trovare le stazioni nelle vicinanze.",
+    shortcuts_title: "Scorciatoie da tastiera",
+    shortcut_escape: "Chiudi pannello o finestra",
+    shortcut_search: "Apri ricerca",
+    shortcut_history: "Mostra/nascondi cronologia",
+    shortcut_locate: "Usa la mia posizione",
+    shortcut_theme: "Cambia tema",
+    shortcut_refresh: "Cerca in questa zona",
+    shortcut_help: "Mostra questo aiuto",
+    help_btn_label: "Aiuto",
+    replay_tutorial: "Riavvia il tutorial",
+    close: "Chiudi",
   }
 };
 

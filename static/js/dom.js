@@ -18,6 +18,7 @@ export const elements = {
     radiusSelect: document.getElementById('radiusSelect'),
     langSelect: document.getElementById('langSelect'),
     filterToggle: document.getElementById('filterToggle'),
+    helpBtn: document.getElementById('helpBtn'),
     
     // Search
     addressSearch: document.getElementById('addressSearch'),

@@ -5,6 +5,7 @@ import { initMap, syncMarkers, selectMarker, setUserLocationMarker } from './map
 import { updateUILanguage, closePanelUI, toggleHistoryPanel, closeHistoryPanelUI, renderPanel, showToast, bindHistoryEvents } from './ui.js';
 import { Sheet } from './Sheet.js';
 import { checkTutorial } from './tutorial.js';
+import { bindKeyboardShortcuts, openShortcutsHelp } from './keyboard.js';
 import { BREAKPOINTS, TIMEOUTS, MAP_CONFIG, SEARCH_CONFIG } from './constants.js';
 import { elements } from './dom.js';
 
@@ -71,6 +72,7 @@ async function bootstrapApp() {
   await loadFuels(urlState.fuel);
   bindControls();
   bindHistoryEvents(openStationById);
+  bindKeyboardShortcuts();
   new Sheet('panel', 'bottom');
   new Sheet('historyPanel', 'bottom');
   new Sheet('controls', 'top');
@@ -195,6 +197,10 @@ function bindControls() {
 
   elements.panelClose.addEventListener('click', closePanel);
   elements.historyPanelClose.addEventListener('click', closeHistoryPanel);
+
+  elements.helpBtn?.addEventListener('click', () => {
+    openShortcutsHelp();
+  });
 
   bindAddressSearch();
 }
