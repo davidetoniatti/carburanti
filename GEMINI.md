@@ -201,8 +201,6 @@ Open items:
   - "Step N of M" label somewhere in the modal header.
 - **Tier 4 tutorial**: progressive onboarding (tooltip coachmarks),
   state-machine unit tests (needs jsdom or similar).
-- **Help modal live i18n**: generalize the `refreshTutorialIfActive` pattern
-  so help modal survives language changes while open.
 - **CSP header**: deferred pending an inventory of Leaflet/unpkg/Google Fonts
   or self-hosting them.
 - **Controls slot swap**: JS DOM move → CSS `order` reshuffle.
