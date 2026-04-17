@@ -24,6 +24,14 @@ export function startTutorial() {
     const overlay = document.createElement('div');
     overlay.id = 'tutorial-overlay';
 
+    // Spotlight: a dim backdrop with a cutout around the current highlight.
+    // The element is the transparent hole; its massive box-shadow creates the
+    // surrounding dim. Size 0 == full dim everywhere (used when a step has no
+    // highlight).
+    const spotlight = document.createElement('div');
+    spotlight.className = 'tutorial-spotlight';
+    spotlight.setAttribute('aria-hidden', 'true');
+
     const modal = document.createElement('div');
     modal.className = 'tutorial-modal';
     modal.setAttribute('role', 'dialog');
@@ -66,7 +74,8 @@ export function startTutorial() {
 
     actions.append(backBtn, spacer, skipBtn, nextBtn);
     modal.append(dotsContainer, title, text, actions);
-    overlay.append(modal);
+    // spotlight first so modal naturally stacks on top via DOM order.
+    overlay.append(spotlight, modal);
     document.body.appendChild(overlay);
 
     TUTORIAL_STEPS.forEach(() => {
@@ -81,6 +90,36 @@ export function startTutorial() {
 
     const clearHighlights = () => {
         document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+    };
+
+    const SPOTLIGHT_PADDING = 8;
+    const updateSpotlight = (selector) => {
+        const el = selector ? document.querySelector(selector) : null;
+        if (!el) {
+            // No highlight: shrink to a 0×0 point. The box-shadow covers the
+            // viewport, so the user sees a full dim with no cutout.
+            spotlight.style.top = '0';
+            spotlight.style.left = '0';
+            spotlight.style.width = '0';
+            spotlight.style.height = '0';
+            spotlight.style.borderRadius = '0';
+            return;
+        }
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) {
+            // Element exists but isn't rendered (display:none ancestor, etc.).
+            spotlight.style.top = '0';
+            spotlight.style.left = '0';
+            spotlight.style.width = '0';
+            spotlight.style.height = '0';
+            spotlight.style.borderRadius = '0';
+            return;
+        }
+        spotlight.style.top = `${rect.top - SPOTLIGHT_PADDING}px`;
+        spotlight.style.left = `${rect.left - SPOTLIGHT_PADDING}px`;
+        spotlight.style.width = `${rect.width + SPOTLIGHT_PADDING * 2}px`;
+        spotlight.style.height = `${rect.height + SPOTLIGHT_PADDING * 2}px`;
+        spotlight.style.borderRadius = '8px';
     };
 
     const renderTitle = () => {
@@ -109,13 +148,20 @@ export function startTutorial() {
         if (step.highlight) {
             document.querySelectorAll(step.highlight).forEach(el => el.classList.add('tutorial-highlight'));
         }
+        updateSpotlight(step.highlight);
     };
 
     activeRefresh = updateUI;
 
+    const onResize = () => {
+        updateSpotlight(TUTORIAL_STEPS[currentIndex].highlight);
+    };
+    window.addEventListener('resize', onResize);
+
     const finishTutorial = () => {
         clearHighlights();
         activeRefresh = null;
+        window.removeEventListener('resize', onResize);
         localStorage.setItem(STORAGE_KEYS.TUTORIAL_SEEN, 'true');
         document.removeEventListener('keydown', onKeydown, true);
         overlay.classList.add('fade-out');
