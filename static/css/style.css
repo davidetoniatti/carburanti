@@ -568,28 +568,26 @@ select:hover { border-color: var(--accent); }
 #tutorial-overlay {
   position: fixed;
   inset: 0;
+  /* Intentionally transparent: the tutorial points at real UI elements and
+     dimming them would defeat the purpose of the highlight mechanic. */
   background: transparent;
   z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
   animation: fadeIn 0.3s ease;
   opacity: 1;
   transition: opacity 0.3s;
 }
 #tutorial-overlay.fade-out { opacity: 0; }
 .tutorial-modal {
-  /* position: fixed keeps the modal in the positioned paint bucket alongside
-     the spotlight, so DOM order (spotlight first, modal second) puts the
-     modal on top of the box-shadow dim. Centered via transform, not JS —
-     reading the text in a stable location matters more than tooltip-style
-     anchoring. */
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(400px, calc(100vw - 32px));
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 32px;
+  max-width: 400px;
+  width: 100%;
   box-shadow: 0 20px 40px rgba(0,0,0,0.6);
   text-align: center;
 }
@@ -638,26 +636,6 @@ select:hover { border-color: var(--accent); }
   box-shadow: 0 0 0 4px var(--accent), 0 0 20px var(--accent) !important;
   transition: box-shadow 0.3s ease;
   pointer-events: none;
-}
-
-/* Spotlight: transparent cutout with a giant box-shadow for the dim.
-   Sized/positioned at runtime from tutorial.js. At 0×0 the shadow covers
-   everything, giving a full dim when no highlight is active. */
-.tutorial-spotlight {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  background: transparent;
-  pointer-events: none;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-  transition:
-    top 0.3s ease,
-    left 0.3s ease,
-    width 0.3s ease,
-    height 0.3s ease,
-    border-radius 0.3s ease;
 }
 
 /* -- SHORTCUTS HELP MODAL (reuses tutorial modal shell) -- */
@@ -763,7 +741,6 @@ select:hover { border-color: var(--accent); }
   #shortcuts-help-overlay.fade-out,
   .tutorial-progress .dot,
   .tutorial-highlight,
-  .tutorial-spotlight,
   .btn-text,
   .btn-primary {
     animation: none !important;
