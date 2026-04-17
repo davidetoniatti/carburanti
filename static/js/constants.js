@@ -53,7 +53,9 @@ export const TUTORIAL_STEPS = [
     { textKey: 'tutorial_step1', highlight: null,             icon: ICON_FUEL },
     { textKey: 'tutorial_step2', highlight: '.price-marker',  icon: ICON_PIN },
     { textKey: 'tutorial_step3', highlight: '.search-wrap',   icon: ICON_SEARCH },
-    { textKey: 'tutorial_step4', highlight: '#filterToggle',  icon: ICON_FILTER },
+    // On desktop the #filterToggle button is hidden — the selects live inline
+    // in the topbar. Highlight them directly instead.
+    { textKey: 'tutorial_step4', highlight: '#filterToggle',  highlightDesktop: '#fuelSelect, #radiusSelect', icon: ICON_FILTER },
     { textKey: 'tutorial_step5', highlight: '#historyToggle', icon: ICON_HISTORY },
     { textKey: 'tutorial_step6', highlight: '#themeToggle',   icon: ICON_THEME },
     { textKey: 'tutorial_step7', highlight: '#locateBtn',     icon: ICON_LOCATE },

@@ -1,5 +1,5 @@
 import { t } from './i18n.js';
-import { TUTORIAL_STEPS, STORAGE_KEYS } from './constants.js';
+import { TUTORIAL_STEPS, STORAGE_KEYS, BREAKPOINTS } from './constants.js';
 
 const FOCUSABLE_SELECTOR = 'button, [href], [tabindex]:not([tabindex="-1"])';
 
@@ -115,9 +115,12 @@ export function startTutorial() {
         // Safe: step.icon is a static SVG string from constants.js.
         iconBox.innerHTML = step.icon || '';
 
+        const isDesktop = window.matchMedia(`(min-width: ${BREAKPOINTS.DESKTOP + 1}px)`).matches;
+        const highlight = (isDesktop && step.highlightDesktop) ? step.highlightDesktop : step.highlight;
+
         clearHighlights();
-        if (step.highlight) {
-            document.querySelectorAll(step.highlight).forEach(el => el.classList.add('tutorial-highlight'));
+        if (highlight) {
+            document.querySelectorAll(highlight).forEach(el => el.classList.add('tutorial-highlight'));
         }
     };
 
