@@ -45,7 +45,7 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 	fuelIDStr := r.URL.Query().Get("fuel")
 	fuelID, _ := strconv.Atoi(fuelIDStr)
 
-	result, err := s.Client.SearchZoneWithContext(r.Context(), lat, lng, radius)
+	result, err := s.Client.SearchZone(r.Context(), lat, lng, radius)
 	if err != nil {
 		s.handleError(w, NewAppError(http.StatusBadGateway, "upstream service error", err))
 		return
@@ -126,7 +126,7 @@ func (s *Server) StationHandler(w http.ResponseWriter, r *http.Request) {
 		s.handleError(w, NewAppError(http.StatusBadRequest, "invalid station id", err))
 		return
 	}
-	station, err := s.Client.GetServiceAreaWithContext(r.Context(), id)
+	station, err := s.Client.GetServiceArea(r.Context(), id)
 	if err != nil {
 		s.handleError(w, NewAppError(http.StatusBadGateway, "upstream service error", err))
 		return
@@ -139,7 +139,7 @@ func (s *Server) FuelsHandler(w http.ResponseWriter, r *http.Request) {
 		s.handleError(w, NewAppError(http.StatusMethodNotAllowed, "method not allowed", nil))
 		return
 	}
-	fuels, err := s.Client.GetFuelsWithContext(r.Context())
+	fuels, err := s.Client.GetFuels(r.Context())
 	if err != nil {
 		s.handleError(w, NewAppError(http.StatusBadGateway, "upstream service error", err))
 		return
@@ -158,7 +158,7 @@ func (s *Server) GeocodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, err := s.Geocoder.GeocodeWithContext(r.Context(), q, r.Header.Get("Accept-Language"))
+	results, err := s.Geocoder.Geocode(r.Context(), q, r.Header.Get("Accept-Language"))
 	if err != nil {
 		s.handleError(w, NewAppError(http.StatusBadGateway, "geocoding service error", err))
 		return

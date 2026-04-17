@@ -18,7 +18,7 @@ func TestClient_GetFuels(t *testing.T) {
 	c := cache.New[any]()
 	client := NewClient("", c)
 
-	fuels, err := client.GetFuels()
+	fuels, err := client.GetFuels(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestClient_SearchZone(t *testing.T) {
 	c := cache.New[any]()
 	client := NewClient(server.URL, c)
 
-	res, err := client.SearchZone(41.0, 12.0, 5)
+	res, err := client.SearchZone(context.Background(), 41.0, 12.0, 5)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestClient_GetServiceArea(t *testing.T) {
 	c := cache.New[any]()
 	client := NewClient(server.URL, c)
 
-	station, err := client.GetServiceArea(123)
+	station, err := client.GetServiceArea(context.Background(), 123)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -102,7 +102,7 @@ func TestClient_ErrorHandling(t *testing.T) {
 	c := cache.New[any]()
 	client := NewClient(server.URL, c)
 
-	_, err := client.SearchZone(0, 0, 100)
+	_, err := client.SearchZone(context.Background(), 0, 0, 100)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -145,7 +145,7 @@ func TestClient_SingleflightCoalescing(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, err := client.SearchZone(41.0, 12.0, 5)
+			_, err := client.SearchZone(context.Background(), 41.0, 12.0, 5)
 			errChan <- err
 		}()
 	}
@@ -182,7 +182,7 @@ func TestClient_SingleflightCancellation(t *testing.T) {
 
 	errChan := make(chan error, 2)
 	go func() {
-		_, err := client.SearchZoneWithContext(ctx1, 41.0, 12.0, 5)
+		_, err := client.SearchZone(ctx1, 41.0, 12.0, 5)
 		errChan <- err
 	}()
 
@@ -194,7 +194,7 @@ func TestClient_SingleflightCancellation(t *testing.T) {
 	}
 
 	go func() {
-		_, err := client.SearchZoneWithContext(ctx2, 41.0, 12.0, 5)
+		_, err := client.SearchZone(ctx2, 41.0, 12.0, 5)
 		errChan <- err
 	}()
 

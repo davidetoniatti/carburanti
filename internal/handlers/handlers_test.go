@@ -19,25 +19,16 @@ type mockStationProvider struct {
 	geocodeFunc func(ctx context.Context, query, lang string) (any, error)
 }
 
-func (m *mockStationProvider) SearchZone(lat, lng float64, radius int) (*models.SearchResponse, error) {
-	return m.searchFunc(context.Background(), lat, lng, radius)
-}
-func (m *mockStationProvider) SearchZoneWithContext(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error) {
+func (m *mockStationProvider) SearchZone(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error) {
 	return m.searchFunc(ctx, lat, lng, radius)
 }
-func (m *mockStationProvider) GetFuels() ([]models.FuelType, error) {
-	return m.fuelsFunc(context.Background())
-}
-func (m *mockStationProvider) GetFuelsWithContext(ctx context.Context) ([]models.FuelType, error) {
+func (m *mockStationProvider) GetFuels(ctx context.Context) ([]models.FuelType, error) {
 	return m.fuelsFunc(ctx)
 }
-func (m *mockStationProvider) GetServiceArea(id int) (*models.GasStation, error) {
-	return m.detailFunc(context.Background(), id)
-}
-func (m *mockStationProvider) GetServiceAreaWithContext(ctx context.Context, id int) (*models.GasStation, error) {
+func (m *mockStationProvider) GetServiceArea(ctx context.Context, id int) (*models.GasStation, error) {
 	return m.detailFunc(ctx, id)
 }
-func (m *mockStationProvider) GeocodeWithContext(ctx context.Context, query, lang string) (any, error) {
+func (m *mockStationProvider) Geocode(ctx context.Context, query, lang string) (any, error) {
 	if m.geocodeFunc == nil {
 		return []any{}, nil
 	}

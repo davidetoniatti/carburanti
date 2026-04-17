@@ -14,7 +14,7 @@ import (
 )
 
 type Geocoder interface {
-	GeocodeWithContext(ctx context.Context, query, lang string) (any, error)
+	Geocode(ctx context.Context, query, lang string) (any, error)
 }
 
 type NominatimClient struct {
@@ -32,7 +32,7 @@ func NewNominatimClient(c *cache.Cache[any]) *NominatimClient {
 	}
 }
 
-func (c *NominatimClient) GeocodeWithContext(ctx context.Context, query, lang string) (any, error) {
+func (c *NominatimClient) Geocode(ctx context.Context, query, lang string) (any, error) {
 	// Sanitize Accept-Language header to prevent log injection or abuse
 	// We only care about it/en/empty.
 	safeLang := ""

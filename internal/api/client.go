@@ -17,12 +17,9 @@ import (
 )
 
 type StationProvider interface {
-	SearchZone(lat, lng float64, radius int) (*models.SearchResponse, error)
-	SearchZoneWithContext(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error)
-	GetServiceArea(id int) (*models.GasStation, error)
-	GetServiceAreaWithContext(ctx context.Context, id int) (*models.GasStation, error)
-	GetFuels() ([]models.FuelType, error)
-	GetFuelsWithContext(ctx context.Context) ([]models.FuelType, error)
+	SearchZone(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error)
+	GetServiceArea(ctx context.Context, id int) (*models.GasStation, error)
+	GetFuels(ctx context.Context) ([]models.FuelType, error)
 }
 
 type Client struct {
@@ -75,11 +72,7 @@ func (c *Client) doRequest(ctx context.Context, method, url string, body []byte)
 	return io.ReadAll(resp.Body)
 }
 
-func (c *Client) SearchZone(lat, lng float64, radius int) (*models.SearchResponse, error) {
-	return c.SearchZoneWithContext(context.Background(), lat, lng, radius)
-}
-
-func (c *Client) SearchZoneWithContext(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error) {
+func (c *Client) SearchZone(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error) {
 	// Quantize coordinates to improve cache hits
 	qLat := math.Round(lat*10000) / 10000
 	qLng := math.Round(lng*10000) / 10000
@@ -127,11 +120,7 @@ func (c *Client) SearchZoneWithContext(ctx context.Context, lat, lng float64, ra
 	}
 }
 
-func (c *Client) GetServiceArea(id int) (*models.GasStation, error) {
-	return c.GetServiceAreaWithContext(context.Background(), id)
-}
-
-func (c *Client) GetServiceAreaWithContext(ctx context.Context, id int) (*models.GasStation, error) {
+func (c *Client) GetServiceArea(ctx context.Context, id int) (*models.GasStation, error) {
 	cacheKey := fmt.Sprintf("station:%d", id)
 	if val, found := c.Cache.Get(cacheKey); found {
 		return val.(*models.GasStation), nil
@@ -165,11 +154,7 @@ func (c *Client) GetServiceAreaWithContext(ctx context.Context, id int) (*models
 	}
 }
 
-func (c *Client) GetFuels() ([]models.FuelType, error) {
-	return c.GetFuelsWithContext(context.Background())
-}
-
-func (c *Client) GetFuelsWithContext(ctx context.Context) ([]models.FuelType, error) {
+func (c *Client) GetFuels(ctx context.Context) ([]models.FuelType, error) {
 	return []models.FuelType{
 		{ID: 1, Name: "Benzina"},
 		{ID: 2, Name: "Gasolio"},
