@@ -6,7 +6,7 @@ import { updateUILanguage, closePanelUI, toggleHistoryPanel, closeHistoryPanelUI
 import { Sheet } from './Sheet.js';
 import { checkTutorial } from './tutorial.js';
 import { bindKeyboardShortcuts, openShortcutsHelp } from './keyboard.js';
-import { BREAKPOINTS, TIMEOUTS, MAP_CONFIG, SEARCH_CONFIG } from './constants.js';
+import { BREAKPOINTS, TIMEOUTS, MAP_CONFIG, SEARCH_CONFIG, STORAGE_KEYS } from './constants.js';
 import { elements } from './dom.js';
 
 document.addEventListener('DOMContentLoaded', bootstrapApp);
@@ -32,7 +32,7 @@ async function bootstrapApp() {
   const browserLang = navigator.language.split('-')[0];
   if (hasLocale(browserLang)) state.lang = browserLang;
 
-  const savedTheme = localStorage.getItem('ohmypieno_theme') || 'device';
+  const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 'device';
   setTheme(savedTheme);
 
   // Listen for live system theme changes
@@ -100,7 +100,7 @@ async function bootstrapApp() {
 
 function setTheme(mode) {
   state.theme = mode;
-  localStorage.setItem('ohmypieno_theme', mode);
+  localStorage.setItem(STORAGE_KEYS.THEME, mode);
   applyThemeByMode(mode);
 }
 

@@ -1,7 +1,6 @@
 import { t } from './i18n.js';
-import { TUTORIAL_STEPS } from './constants.js';
+import { TUTORIAL_STEPS, STORAGE_KEYS } from './constants.js';
 
-const TUTORIAL_KEY = 'ohmypieno_tutorial_seen';
 const FOCUSABLE_SELECTOR = 'button, [href], [tabindex]:not([tabindex="-1"])';
 
 // Set while a tutorial is on screen. Invoked by `refreshTutorialIfActive`
@@ -9,7 +8,7 @@ const FOCUSABLE_SELECTOR = 'button, [href], [tabindex]:not([tabindex="-1"])';
 let activeRefresh = null;
 
 export function checkTutorial() {
-    if (localStorage.getItem(TUTORIAL_KEY) === 'true') return;
+    if (localStorage.getItem(STORAGE_KEYS.TUTORIAL_SEEN) === 'true') return;
     startTutorial();
 }
 
@@ -117,7 +116,7 @@ export function startTutorial() {
     const finishTutorial = () => {
         clearHighlights();
         activeRefresh = null;
-        localStorage.setItem(TUTORIAL_KEY, 'true');
+        localStorage.setItem(STORAGE_KEYS.TUTORIAL_SEEN, 'true');
         document.removeEventListener('keydown', onKeydown, true);
         overlay.classList.add('fade-out');
         const remove = () => {

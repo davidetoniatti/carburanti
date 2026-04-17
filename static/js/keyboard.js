@@ -3,6 +3,7 @@ import { t } from './i18n.js';
 import { toggleHistoryPanel } from './ui.js';
 import { closePanel, closeHistoryPanel } from './app.js';
 import { startTutorial } from './tutorial.js';
+import { STORAGE_KEYS } from './constants.js';
 
 const FOCUSABLE_SELECTOR = 'button, [href], [tabindex]:not([tabindex="-1"])';
 
@@ -239,7 +240,7 @@ export function openShortcutsHelp() {
 
   replayBtn.addEventListener('click', () => {
     close();
-    localStorage.removeItem('ohmypieno_tutorial_seen');
+    localStorage.removeItem(STORAGE_KEYS.TUTORIAL_SEEN);
     startTutorial();
   });
   closeBtn.addEventListener('click', close);

@@ -1,3 +1,8 @@
+export const STORAGE_KEYS = {
+    TUTORIAL_SEEN: 'ohmypieno_tutorial_seen',
+    THEME:         'ohmypieno_theme',
+};
+
 export const BREAKPOINTS = {
     DESKTOP: 900
 };
