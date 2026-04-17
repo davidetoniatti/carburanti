@@ -576,7 +576,15 @@ select:hover { border-color: var(--accent); }
 }
 #tutorial-overlay.fade-out { opacity: 0; }
 .tutorial-modal {
+  /* position: fixed keeps the modal in the positioned paint bucket alongside
+     the spotlight, so DOM order (spotlight first, modal second) puts the
+     modal on top of the box-shadow dim. Centered via transform, not JS —
+     reading the text in a stable location matters more than tooltip-style
+     anchoring. */
   position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: min(400px, calc(100vw - 32px));
   background: var(--surface);
   border: 1px solid var(--border);
@@ -584,7 +592,6 @@ select:hover { border-color: var(--accent); }
   padding: 32px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.6);
   text-align: center;
-  transition: top 0.3s ease, left 0.3s ease;
 }
 .tutorial-modal:focus { outline: none; }
 .tutorial-progress {
@@ -757,7 +764,6 @@ select:hover { border-color: var(--accent); }
   .tutorial-progress .dot,
   .tutorial-highlight,
   .tutorial-spotlight,
-  .tutorial-modal,
   .btn-text,
   .btn-primary {
     animation: none !important;
