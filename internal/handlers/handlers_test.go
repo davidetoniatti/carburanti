@@ -195,6 +195,74 @@ func TestSearchHandler_CacheMutationReproduction(t *testing.T) {
 	}
 }
 
+func TestSearchHandler_NoFuelFilter(t *testing.T) {
+	// When fuelID is absent the handler now skips the deep-copy and streams
+	// the upstream result directly. Verify the response is still correctly
+	// shaped and carries no SelectedPrice/SelectedFuelName fields.
+	sharedResponse := &models.SearchResponse{
+		Success: true,
+		Results: []models.GasStation{
+			{
+				ID: 1, Name: "Test Station",
+				Fuels: []models.Fuel{
+					{FuelID: 1, Price: 1.5, Name: "Benzina", IsSelf: true},
+					{FuelID: 2, Price: 1.8, Name: "Gasolio", IsSelf: true},
+				},
+			},
+		},
+	}
+	mock := &mockStationProvider{
+		searchFunc: func(ctx context.Context, lat, lng float64, radius int) (*models.SearchResponse, error) {
+			return sharedResponse, nil
+		},
+	}
+	srv := NewServer(mock, mock)
+	srv.Config.LatMin = 35.0
+	srv.Config.LatMax = 48.0
+	srv.Config.LngMin = 6.0
+	srv.Config.LngMax = 19.0
+	srv.Config.MaxRadius = 50
+
+	searchHandler := srv.ValidateSearchMiddleware(http.HandlerFunc(srv.SearchHandler))
+	req := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0", nil)
+	rr := httptest.NewRecorder()
+	searchHandler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+	var res models.SearchResponse
+	if err := json.NewDecoder(rr.Body).Decode(&res); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(res.Results) != 1 || res.Results[0].ID != 1 {
+		t.Fatalf("unexpected results: %+v", res.Results)
+	}
+	if res.Results[0].SelectedPrice != 0 {
+		t.Errorf("SelectedPrice should be zero, got %f", res.Results[0].SelectedPrice)
+	}
+	if res.Results[0].SelectedFuelName != "" {
+		t.Errorf("SelectedFuelName should be empty, got %q", res.Results[0].SelectedFuelName)
+	}
+	if len(res.Results[0].Fuels) != 2 {
+		t.Errorf("expected 2 fuels, got %d", len(res.Results[0].Fuels))
+	}
+
+	// Subsequent filtered call on the same upstream must still work and
+	// must not be contaminated by the unfiltered path.
+	req2 := httptest.NewRequest("GET", "/api/search?lat=41.0&lng=12.0&fuel=2", nil)
+	rr2 := httptest.NewRecorder()
+	searchHandler.ServeHTTP(rr2, req2)
+	var res2 models.SearchResponse
+	json.NewDecoder(rr2.Body).Decode(&res2)
+	if res2.Results[0].SelectedFuelName != "Gasolio" {
+		t.Errorf("follow-up filter: expected Gasolio, got %q", res2.Results[0].SelectedFuelName)
+	}
+	if sharedResponse.Results[0].SelectedPrice != 0 || sharedResponse.Results[0].SelectedFuelName != "" {
+		t.Errorf("upstream was mutated: %+v", sharedResponse.Results[0])
+	}
+}
+
 func TestSearchHandler_Concurrency(t *testing.T) {
 	sharedResponse := &models.SearchResponse{
 		Results: []models.GasStation{

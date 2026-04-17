@@ -51,28 +51,27 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	enrichedResults := make([]models.GasStation, len(result.Results))
-	for i := range result.Results {
-		enrichedResults[i] = result.Results[i]
-		// Deep copy Fuels slice to prevent mutating the shared cached station data
-		if result.Results[i].Fuels != nil {
-			enrichedResults[i].Fuels = make([]models.Fuel, len(result.Results[i].Fuels))
-			copy(enrichedResults[i].Fuels, result.Results[i].Fuels)
-		}
-	}
-
+	// Without fuel filter we don't enrich: stream the upstream results as-is.
+	results := result.Results
 	if fuelID > 0 {
-		for i := range enrichedResults {
-			price, name := s.calculateSelectedPrice(&enrichedResults[i], fuelID)
-			enrichedResults[i].SelectedPrice = price
-			enrichedResults[i].SelectedFuelName = name
+		results = make([]models.GasStation, len(result.Results))
+		for i := range result.Results {
+			results[i] = result.Results[i]
+			// Deep copy Fuels so enrichment can't mutate the shared cached data.
+			if result.Results[i].Fuels != nil {
+				results[i].Fuels = make([]models.Fuel, len(result.Results[i].Fuels))
+				copy(results[i].Fuels, result.Results[i].Fuels)
+			}
+			price, name := s.calculateSelectedPrice(&results[i], fuelID)
+			results[i].SelectedPrice = price
+			results[i].SelectedFuelName = name
 		}
 	}
 
 	response := models.SearchResponse{
 		Success: result.Success,
 		Center:  result.Center,
-		Results: enrichedResults,
+		Results: results,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
