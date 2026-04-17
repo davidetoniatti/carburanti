@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { t } from './i18n.js';
 import { escapeHtml, timeAgo, getDistance } from './formatters.js';
 import { openStationById, closePanel } from './app.js';
+import { refreshTutorialIfActive } from './tutorial.js';
 import { BREAKPOINTS, TIMEOUTS } from './constants.js';
 import { elements } from './dom.js';
 
@@ -19,10 +20,12 @@ export function updateUILanguage() {
     const key = el.getAttribute('data-i18n-placeholder');
     el.placeholder = t(key);
   });
-  
+
   if (!elements.panel.classList.contains('hidden') && state.currentStationData) {
     renderPanel(state.currentStationData);
   }
+
+  refreshTutorialIfActive();
 }
 
 export function showToast(msg, type = 'info') {

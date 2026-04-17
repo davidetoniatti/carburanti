@@ -4,9 +4,17 @@ import { TUTORIAL_STEPS } from './constants.js';
 const TUTORIAL_KEY = 'ohmypieno_tutorial_seen';
 const FOCUSABLE_SELECTOR = 'button, [href], [tabindex]:not([tabindex="-1"])';
 
+// Set while a tutorial is on screen. Invoked by `refreshTutorialIfActive`
+// so language changes during the tutorial re-render its strings in place.
+let activeRefresh = null;
+
 export function checkTutorial() {
     if (localStorage.getItem(TUTORIAL_KEY) === 'true') return;
     startTutorial();
+}
+
+export function refreshTutorialIfActive() {
+    if (activeRefresh) activeRefresh();
 }
 
 export function startTutorial() {
@@ -31,9 +39,6 @@ export function startTutorial() {
 
     const title = document.createElement('h2');
     title.id = 'tutorial-title';
-    const em = document.createElement('em');
-    em.textContent = 'PIENO';
-    title.append(t('tutorial_title') + ' OHMY', em);
 
     const text = document.createElement('p');
     text.id = 'tutorial-text';
@@ -46,7 +51,6 @@ export function startTutorial() {
     backBtn.id = 'tutorial-back';
     backBtn.type = 'button';
     backBtn.className = 'btn-text';
-    backBtn.textContent = t('btn_back');
 
     const spacer = document.createElement('div');
     spacer.className = 'spacer';
@@ -55,7 +59,6 @@ export function startTutorial() {
     skipBtn.id = 'tutorial-skip';
     skipBtn.type = 'button';
     skipBtn.className = 'btn-text';
-    skipBtn.textContent = t('btn_skip');
 
     const nextBtn = document.createElement('button');
     nextBtn.id = 'tutorial-next';
@@ -81,9 +84,19 @@ export function startTutorial() {
         document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
     };
 
+    const renderTitle = () => {
+        title.replaceChildren();
+        const em = document.createElement('em');
+        em.textContent = 'PIENO';
+        title.append(t('tutorial_title') + ' OHMY', em);
+    };
+
     const updateUI = () => {
         const step = TUTORIAL_STEPS[currentIndex];
 
+        renderTitle();
+        backBtn.textContent = t('btn_back');
+        skipBtn.textContent = t('btn_skip');
         text.textContent = t(step.textKey);
 
         dots.forEach((dot, i) => {
@@ -99,8 +112,11 @@ export function startTutorial() {
         }
     };
 
+    activeRefresh = updateUI;
+
     const finishTutorial = () => {
         clearHighlights();
+        activeRefresh = null;
         localStorage.setItem(TUTORIAL_KEY, 'true');
         document.removeEventListener('keydown', onKeydown, true);
         overlay.classList.add('fade-out');

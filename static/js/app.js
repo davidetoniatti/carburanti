@@ -96,8 +96,6 @@ async function bootstrapApp() {
   } else {
     performSearch(startLat, startLng);
   }
-  
-  checkTutorial();
 }
 
 function setTheme(mode) {
@@ -280,6 +278,8 @@ async function showSuggestions(input, box) {
   }
 }
 
+let firstSearchDone = false;
+
 export async function performSearch(lat, lng) {
   elements.searchHereBtn.classList.add('hidden');
   try {
@@ -291,6 +291,14 @@ export async function performSearch(lat, lng) {
     state.lastSearchCenter = L.latLng(lat, lng);
     state.lastSearchZoom   = state.map?.getZoom() ?? null;
     syncMarkers();
+
+    // The tutorial highlights real UI — in particular `.price-marker`, which
+    // only exists after markers have been rendered. Defer the first-visit
+    // trigger until we have something to point at.
+    if (!firstSearchDone) {
+      firstSearchDone = true;
+      checkTutorial();
+    }
   } catch (err) {
     if (err.name !== 'AbortError') showToast(t('error', { msg: err.message }), 'error');
   }
