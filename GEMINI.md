@@ -192,9 +192,13 @@ Recently completed:
   keys centralized.
 
 Open items:
-- **Tier 3 tutorial polish**: spotlight backdrop (SVG mask / clip-path),
-  modal positioned relative to highlight, per-step icons,
-  `history.pushState` so browser back dismisses.
+- **Tier 3 tutorial polish, narrowed**. Two original items (spotlight
+  backdrop, modal positioned relative to highlight) were built and reverted
+  — see below. What's still safe to do:
+  - Per-step icons inside the modal (inline SVG per step in `TUTORIAL_STEPS`).
+  - `history.pushState` on open + `popstate` listener so browser-back dismisses.
+  - Subtle pulse animation on `.tutorial-highlight` glow.
+  - "Step N of M" label somewhere in the modal header.
 - **Tier 4 tutorial**: progressive onboarding (tooltip coachmarks),
   state-machine unit tests (needs jsdom or similar).
 - **Help modal live i18n**: generalize the `refreshTutorialIfActive` pattern
@@ -203,3 +207,23 @@ Open items:
   or self-hosting them.
 - **Controls slot swap**: JS DOM move → CSS `order` reshuffle.
 - **Flaky sleep in `TestClient_SingleflightCancellation`**.
+
+## Tutorial design constraints (learned the hard way)
+
+Two Tier-3 items were implemented, tried, and reverted. Read these before
+proposing any tutorial visual change:
+
+1. **Do not dim the overlay.** The tutorial points at real UI elements on
+   the live page. Any dim (flat or spotlight-with-cutout) either hides
+   the highlighted element or triggers stacking issues that cascade into
+   worse fixes. The overlay stays transparent; the modal sits on top with
+   its own border/shadow.
+2. **Do not move the modal between steps.** Tooltip-style anchoring next to
+   the highlighted element was built and rejected as disorienting — each
+   "Next" click jumped the whole modal somewhere new. The text is the
+   primary content; reading flow matters more than spatial pointers.
+   Flex-centered, always.
+3. **Highlights communicate targets, alone.** The existing
+   `.tutorial-highlight` pattern (accent `box-shadow` glow + `z-index: 4000`
+   + `pointer-events: none`) is the only visual mechanism for "look at
+   this element." Any enhancement should work *with* this, not around it.
