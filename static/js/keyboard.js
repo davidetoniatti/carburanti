@@ -1,9 +1,17 @@
 import { elements } from './dom.js';
-import { t } from './i18n.js';
-import { toggleHistoryPanel } from './ui.js';
+import { t, translations } from './i18n.js';
+import { toggleHistoryPanel, updateUILanguage } from './ui.js';
 import { closePanel, closeHistoryPanel } from './app.js';
 import { startTutorial } from './tutorial.js';
+import { state, updateURL } from './state.js';
 import { STORAGE_KEYS } from './constants.js';
+
+// Human-readable native names for the languages we support. Not translated —
+// each name represents itself.
+const LANGUAGE_NATIVE = {
+  en: 'English',
+  it: 'Italiano',
+};
 
 const FOCUSABLE_SELECTOR = 'button, [href], [tabindex]:not([tabindex="-1"])';
 
@@ -145,6 +153,12 @@ export function bindKeyboardShortcuts() {
 // Keyboard shortcuts help modal
 // ---------------------------------------------------------------------------
 
+let activeHelpRefresh = null;
+
+export function refreshHelpModalIfActive() {
+  if (activeHelpRefresh) activeHelpRefresh();
+}
+
 export function openShortcutsHelp() {
   if (document.getElementById('shortcuts-help-overlay')) return;
 
@@ -162,26 +176,17 @@ export function openShortcutsHelp() {
 
   const heading = document.createElement('h2');
   heading.id = 'shortcuts-help-title';
-  heading.textContent = t('shortcuts_title');
+
+  const langSection = document.createElement('div');
+  langSection.className = 'language-section';
+  const langLabel = document.createElement('div');
+  langLabel.className = 'section-subtitle';
+  const langButtons = document.createElement('div');
+  langButtons.className = 'language-buttons';
+  langSection.append(langLabel, langButtons);
 
   const list = document.createElement('ul');
   list.className = 'shortcuts-list';
-  for (const s of SHORTCUTS) {
-    const li = document.createElement('li');
-    const keys = document.createElement('span');
-    keys.className = 'shortcut-keys';
-    s.keys.forEach((k, i) => {
-      const kbd = document.createElement('kbd');
-      kbd.textContent = k;
-      keys.appendChild(kbd);
-      if (i < s.keys.length - 1) keys.append('+');
-    });
-    const label = document.createElement('span');
-    label.className = 'shortcut-label';
-    label.textContent = t(s.labelKey);
-    li.append(keys, label);
-    list.appendChild(li);
-  }
 
   const actions = document.createElement('div');
   actions.className = 'tutorial-actions';
@@ -189,7 +194,6 @@ export function openShortcutsHelp() {
   const replayBtn = document.createElement('button');
   replayBtn.type = 'button';
   replayBtn.className = 'btn-text';
-  replayBtn.textContent = t('replay_tutorial');
 
   const spacer = document.createElement('div');
   spacer.className = 'spacer';
@@ -197,14 +201,59 @@ export function openShortcutsHelp() {
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.className = 'btn-primary';
-  closeBtn.textContent = t('close');
 
   actions.append(replayBtn, spacer, closeBtn);
-  modal.append(heading, list, actions);
+  modal.append(heading, langSection, list, actions);
   overlay.append(modal);
   document.body.appendChild(overlay);
 
+  const render = () => {
+    heading.textContent = t('shortcuts_title');
+    langLabel.textContent = t('language_label');
+    replayBtn.textContent = t('replay_tutorial');
+    closeBtn.textContent = t('close');
+
+    list.replaceChildren();
+    for (const s of SHORTCUTS) {
+      const li = document.createElement('li');
+      const keys = document.createElement('span');
+      keys.className = 'shortcut-keys';
+      s.keys.forEach((k, i) => {
+        const kbd = document.createElement('kbd');
+        kbd.textContent = k;
+        keys.appendChild(kbd);
+        if (i < s.keys.length - 1) keys.append('+');
+      });
+      const label = document.createElement('span');
+      label.className = 'shortcut-label';
+      label.textContent = t(s.labelKey);
+      li.append(keys, label);
+      list.appendChild(li);
+    }
+
+    langButtons.replaceChildren();
+    Object.keys(translations).forEach(code => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'language-btn' + (state.lang === code ? ' active' : '');
+      btn.textContent = LANGUAGE_NATIVE[code] || code;
+      btn.addEventListener('click', () => {
+        if (state.lang === code) return;
+        state.lang = code;
+        updateUILanguage();
+        updateURL();
+        // render() replaced the buttons; move focus back onto the new active one.
+        langButtons.querySelector('.language-btn.active')?.focus();
+      });
+      langButtons.appendChild(btn);
+    });
+  };
+
+  activeHelpRefresh = render;
+  render();
+
   const close = () => {
+    activeHelpRefresh = null;
     document.removeEventListener('keydown', onKeydown, true);
     overlay.removeEventListener('helpClose', close);
     overlay.classList.add('fade-out');

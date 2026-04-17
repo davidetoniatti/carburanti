@@ -54,7 +54,6 @@ async function bootstrapApp() {
   placeControls(mq);
   mq.addEventListener("change", placeControls);
 
-  elements.langSelect.value = state.lang;
   updateUILanguage();
 
   const urlState = getStateFromURL();
@@ -164,12 +163,6 @@ function bindControls() {
       ()    => showToast(t('pos_error'), 'error'),
       { timeout: TIMEOUTS.GEO_MS }
     );
-  });
-
-  elements.langSelect.addEventListener('change', (e) => {
-    state.lang = e.target.value;
-    updateUILanguage();
-    updateURL();
   });
 
   elements.historyToggle.addEventListener('click', toggleHistoryPanel);

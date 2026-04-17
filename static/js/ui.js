@@ -3,6 +3,7 @@ import { t } from './i18n.js';
 import { escapeHtml, timeAgo, getDistance } from './formatters.js';
 import { openStationById, closePanel } from './app.js';
 import { refreshTutorialIfActive } from './tutorial.js';
+import { refreshHelpModalIfActive } from './keyboard.js';
 import { BREAKPOINTS, TIMEOUTS } from './constants.js';
 import { elements } from './dom.js';
 
@@ -26,6 +27,7 @@ export function updateUILanguage() {
   }
 
   refreshTutorialIfActive();
+  refreshHelpModalIfActive();
 }
 
 export function showToast(msg, type = 'info') {

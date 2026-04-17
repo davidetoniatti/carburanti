@@ -16,7 +16,6 @@ export const elements = {
     mobileControlsSlot: document.getElementById('mobileControlsSlot'),
     fuelSelect: document.getElementById('fuelSelect'),
     radiusSelect: document.getElementById('radiusSelect'),
-    langSelect: document.getElementById('langSelect'),
     filterToggle: document.getElementById('filterToggle'),
     helpBtn: document.getElementById('helpBtn'),
     

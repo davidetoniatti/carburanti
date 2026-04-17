@@ -721,6 +721,50 @@ select:hover { border-color: var(--accent); }
   text-align: right;
 }
 
+.language-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.section-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.language-buttons {
+  display: flex;
+  gap: 6px;
+}
+.language-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+.language-btn:hover { border-color: var(--accent); color: var(--accent); }
+.language-btn.active {
+  background: rgba(187, 154, 247, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+[data-theme="light"] .language-btn.active { background: rgba(152, 84, 241, 0.15); }
+.language-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .btn-text {
   background: none;
   border: none;
