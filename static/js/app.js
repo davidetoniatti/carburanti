@@ -193,6 +193,9 @@ function bindControls() {
 
   elements.themeToggle.addEventListener('click', toggleTheme);
 
+  elements.panelClose.addEventListener('click', closePanel);
+  elements.historyPanelClose.addEventListener('click', closeHistoryPanel);
+
   bindAddressSearch();
 }
 
@@ -335,9 +338,8 @@ export async function openStationById(id, knownLocation = null, forceSearch = fa
   const sId = String(id);
   selectMarker(sId);
   
-  if (window.innerWidth <= BREAKPOINTS.DESKTOP) {
-    closeHistoryPanelUI();
-  }
+  // Close history panel to avoid overlap on both mobile and desktop
+  closeHistoryPanelUI();
 
   showPanelLoading();
 

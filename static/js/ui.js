@@ -54,9 +54,9 @@ export function toggleHistoryPanel() {
   const isHidden = elements.historyPanel.classList.contains('hidden');
   
   if (isHidden) {
-    if (window.innerWidth <= BREAKPOINTS.DESKTOP) {
-      closePanel();
-    }
+    // On mobile we already close it, let's do it on desktop too to avoid overlap
+    closePanel();
+    
     renderHistory();
     elements.historyPanel.classList.remove('hidden');
     if (window.innerWidth <= BREAKPOINTS.DESKTOP) elements.historyPanel.classList.add('peek');

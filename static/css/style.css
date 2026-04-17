@@ -80,6 +80,33 @@ body {
   [data-theme-mode="device"] #themeToggle .mobile-icon { display: block; }
 }
 
+.desktop-only-close {
+  display: none; /* Hidden by default (mobile) */
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+@media (hover: hover) {
+  .desktop-only-close:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+@media (min-width: 901px) {
+  .desktop-only-close { display: flex; }
+}
+
 [data-theme="light"] .leaflet-tile { filter: none !important; }
 
 
@@ -750,7 +777,7 @@ select:hover { border-color: var(--accent); }
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
-    padding: 16px 16px 0;
+    padding: 48px 16px 0;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     border-radius: 0 0 12px 12px;
