@@ -14,11 +14,16 @@ type Config struct {
 	CacheTTL     time.Duration
 
 	// Validation
-	LatMin float64
-	LatMax float64
-	LngMin float64
-	LngMax float64
+	LatMin    float64
+	LatMax    float64
+	LngMin    float64
+	LngMax    float64
 	MaxRadius int
+
+	// TrustProxyHeaders controls whether X-Forwarded-For is honored for
+	// client IP detection (used by the rate limiter). Enable only when
+	// deployed behind a trusted reverse proxy.
+	TrustProxyHeaders bool
 }
 
 func LoadConfig() *Config {
@@ -40,10 +45,12 @@ func LoadConfig() *Config {
 		IdleTimeout:  120 * time.Second,
 		CacheTTL:     5 * time.Minute,
 
-		LatMin: 35.0,
-		LatMax: 48.0,
-		LngMin: 6.0,
-		LngMax: 19.0,
+		LatMin:    35.0,
+		LatMax:    48.0,
+		LngMin:    6.0,
+		LngMax:    19.0,
 		MaxRadius: 50,
+
+		TrustProxyHeaders: os.Getenv("TRUST_PROXY_HEADERS") == "true",
 	}
 }

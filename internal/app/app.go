@@ -17,8 +17,9 @@ import (
 )
 
 type App struct {
-	server *http.Server
-	cache  *cache.Cache[any]
+	server      *http.Server
+	cache       *cache.Cache[any]
+	rateLimiter *rateLimiter
 }
 
 func New(cfg *Config, staticFiles embed.FS) (*App, error) {
@@ -44,8 +45,10 @@ func New(cfg *Config, staticFiles embed.FS) (*App, error) {
 	}
 	mux.Handle("/", http.FileServer(http.FS(sub)))
 
-	// Chain middlewares: Logging -> Gzip -> Cache-Control
-	handler := loggingMiddleware(gzipMiddleware(cacheControlMiddleware(mux)))
+	rl := newRateLimiter(cfg.TrustProxyHeaders)
+
+	// Chain middlewares: Logging -> SecurityHeaders -> Gzip -> RateLimit -> Cache-Control
+	handler := loggingMiddleware(securityHeadersMiddleware(gzipMiddleware(rl.middleware(cacheControlMiddleware(mux)))))
 
 	srv := &http.Server{
 		Handler:      handler,
@@ -55,8 +58,9 @@ func New(cfg *Config, staticFiles embed.FS) (*App, error) {
 	}
 
 	return &App{
-		server: srv,
-		cache:  c,
+		server:      srv,
+		cache:       c,
+		rateLimiter: rl,
 	}, nil
 }
 
@@ -72,6 +76,7 @@ func (a *App) Handler() http.Handler {
 
 func (a *App) Close() {
 	a.cache.Stop()
+	a.rateLimiter.stop()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := a.server.Shutdown(ctx); err != nil {
@@ -99,6 +104,16 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			"path", r.URL.Path,
 			"status", rec.status,
 			"duration", time.Since(start))
+	})
+}
+
+func securityHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		next.ServeHTTP(w, r)
 	})
 }
 
