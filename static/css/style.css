@@ -568,28 +568,23 @@ select:hover { border-color: var(--accent); }
 #tutorial-overlay {
   position: fixed;
   inset: 0;
-  /* Intentionally transparent: the tutorial points at real UI elements and
-     dimming them would defeat the purpose of the highlight mechanic. */
   background: transparent;
   z-index: 3000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
   animation: fadeIn 0.3s ease;
   opacity: 1;
   transition: opacity 0.3s;
 }
 #tutorial-overlay.fade-out { opacity: 0; }
 .tutorial-modal {
+  position: fixed;
+  width: min(400px, calc(100vw - 32px));
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 32px;
-  max-width: 400px;
-  width: 100%;
   box-shadow: 0 20px 40px rgba(0,0,0,0.6);
   text-align: center;
+  transition: top 0.3s ease, left 0.3s ease;
 }
 .tutorial-modal:focus { outline: none; }
 .tutorial-progress {
@@ -762,6 +757,7 @@ select:hover { border-color: var(--accent); }
   .tutorial-progress .dot,
   .tutorial-highlight,
   .tutorial-spotlight,
+  .tutorial-modal,
   .btn-text,
   .btn-primary {
     animation: none !important;

@@ -93,21 +93,20 @@ export function startTutorial() {
     };
 
     const SPOTLIGHT_PADDING = 8;
-    const updateSpotlight = (selector) => {
+    const MODAL_MARGIN = 16;
+
+    const getTargetRect = (selector) => {
         const el = selector ? document.querySelector(selector) : null;
-        if (!el) {
-            // No highlight: shrink to a 0×0 point. The box-shadow covers the
-            // viewport, so the user sees a full dim with no cutout.
-            spotlight.style.top = '0';
-            spotlight.style.left = '0';
-            spotlight.style.width = '0';
-            spotlight.style.height = '0';
-            spotlight.style.borderRadius = '0';
-            return;
-        }
+        if (!el) return null;
         const rect = el.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) {
-            // Element exists but isn't rendered (display:none ancestor, etc.).
+        if (rect.width === 0 || rect.height === 0) return null;
+        return rect;
+    };
+
+    const updateSpotlight = (rect) => {
+        if (!rect) {
+            // No target: collapse to a 0×0 point so the box-shadow fills
+            // the viewport with a solid dim.
             spotlight.style.top = '0';
             spotlight.style.left = '0';
             spotlight.style.width = '0';
@@ -120,6 +119,58 @@ export function startTutorial() {
         spotlight.style.width = `${rect.width + SPOTLIGHT_PADDING * 2}px`;
         spotlight.style.height = `${rect.height + SPOTLIGHT_PADDING * 2}px`;
         spotlight.style.borderRadius = '8px';
+    };
+
+    const clampToViewport = (top, left, mw, mh) => {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        return {
+            top:  Math.max(MODAL_MARGIN, Math.min(vh - mh - MODAL_MARGIN, top)),
+            left: Math.max(MODAL_MARGIN, Math.min(vw - mw - MODAL_MARGIN, left)),
+        };
+    };
+
+    const updateModalPosition = (rect) => {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const mw = modal.offsetWidth;
+        const mh = modal.offsetHeight;
+
+        if (!rect) {
+            const { top, left } = clampToViewport((vh - mh) / 2, (vw - mw) / 2, mw, mh);
+            modal.style.top = `${top}px`;
+            modal.style.left = `${left}px`;
+            return;
+        }
+
+        const spaceBelow = vh - rect.bottom;
+        const spaceAbove = rect.top;
+        const spaceRight = vw - rect.right;
+        const spaceLeft  = rect.left;
+
+        // Prefer vertical placement (below, then above); fall back to
+        // horizontal sides; last resort is centered over the highlight.
+        let top, left;
+        if (spaceBelow >= mh + MODAL_MARGIN) {
+            top  = rect.bottom + MODAL_MARGIN;
+            left = rect.left + rect.width / 2 - mw / 2;
+        } else if (spaceAbove >= mh + MODAL_MARGIN) {
+            top  = rect.top - mh - MODAL_MARGIN;
+            left = rect.left + rect.width / 2 - mw / 2;
+        } else if (spaceRight >= mw + MODAL_MARGIN) {
+            top  = rect.top + rect.height / 2 - mh / 2;
+            left = rect.right + MODAL_MARGIN;
+        } else if (spaceLeft >= mw + MODAL_MARGIN) {
+            top  = rect.top + rect.height / 2 - mh / 2;
+            left = rect.left - mw - MODAL_MARGIN;
+        } else {
+            top  = (vh - mh) / 2;
+            left = (vw - mw) / 2;
+        }
+
+        const clamped = clampToViewport(top, left, mw, mh);
+        modal.style.top = `${clamped.top}px`;
+        modal.style.left = `${clamped.left}px`;
     };
 
     const renderTitle = () => {
@@ -148,13 +199,17 @@ export function startTutorial() {
         if (step.highlight) {
             document.querySelectorAll(step.highlight).forEach(el => el.classList.add('tutorial-highlight'));
         }
-        updateSpotlight(step.highlight);
+        const rect = getTargetRect(step.highlight);
+        updateSpotlight(rect);
+        updateModalPosition(rect);
     };
 
     activeRefresh = updateUI;
 
     const onResize = () => {
-        updateSpotlight(TUTORIAL_STEPS[currentIndex].highlight);
+        const rect = getTargetRect(TUTORIAL_STEPS[currentIndex].highlight);
+        updateSpotlight(rect);
+        updateModalPosition(rect);
     };
     window.addEventListener('resize', onResize);
 
