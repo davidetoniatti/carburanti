@@ -119,11 +119,15 @@ func securityHeadersMiddleware(next http.Handler) http.Handler {
 
 func cacheControlMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api/") {
+		switch {
+		case r.URL.Path == "/api/fuels":
+			// Hardcoded constant, safe to cache for a day.
+			w.Header().Set("Cache-Control", "public, max-age=86400, immutable")
+		case strings.HasPrefix(r.URL.Path, "/api/"):
 			w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
-		} else if r.URL.Path == "/" || strings.HasSuffix(r.URL.Path, ".html") {
+		case r.URL.Path == "/" || strings.HasSuffix(r.URL.Path, ".html"):
 			w.Header().Set("Cache-Control", "no-cache")
-		} else if strings.Contains(r.URL.Path, "/js/") || strings.Contains(r.URL.Path, "/css/") {
+		case strings.Contains(r.URL.Path, "/js/") || strings.Contains(r.URL.Path, "/css/"):
 			w.Header().Set("Cache-Control", "public, max-age=3600")
 		}
 		next.ServeHTTP(w, r)
