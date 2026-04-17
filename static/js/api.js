@@ -89,10 +89,15 @@ export function searchStations(lat, lng, radius, fuelId) {
   const promise = fetch(
     `/api/search?lat=${lat}&lng=${lng}&radius=${radius}&fuel=${fuelId}`,
     { signal: state.requests.searchAbortController.signal }
-  ).then((res) => {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
-  });
+  )
+    .then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
+    .catch((err) => {
+      searchCache.delete(cacheKey);
+      throw err;
+    });
 
   searchCache.set(cacheKey, promise);
   return promise;

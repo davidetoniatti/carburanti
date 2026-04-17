@@ -2,7 +2,6 @@ package app
 
 import (
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -47,13 +46,4 @@ func LoadConfig() *Config {
 		LngMax: 19.0,
 		MaxRadius: 50,
 	}
-}
-
-func getEnvInt(key string, defaultVal int) int {
-	if val := os.Getenv(key); val != "" {
-		if i, err := strconv.Atoi(val); err == nil {
-			return i
-		}
-	}
-	return defaultVal
 }
