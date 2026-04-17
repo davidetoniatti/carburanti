@@ -3,12 +3,12 @@ package app
 import (
 	"compress/gzip"
 	"context"
-	"embed"
 	"io"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"ohmypieno/internal/api"
@@ -22,7 +22,7 @@ type App struct {
 	rateLimiter *rateLimiter
 }
 
-func New(cfg *Config, staticFiles embed.FS) (*App, error) {
+func New(cfg *Config, staticFiles fs.FS) (*App, error) {
 	c := cache.New[any]()
 	apiClient := api.NewClient(cfg.BaseURL, c)
 	geocodeClient := api.NewNominatimClient(c)
@@ -134,22 +134,109 @@ func cacheControlMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-type gzipResponseWriter struct {
-	io.Writer
-	http.ResponseWriter
+var gzipWriterPool = sync.Pool{
+	New: func() any { return gzip.NewWriter(io.Discard) },
 }
 
-func (w gzipResponseWriter) Write(b []byte) (int, error) {
-	return w.Writer.Write(b)
+// Compressible content types. Prefix-matched against Content-Type (charset
+// suffix stripped). Already-compressed formats (images, video, woff2, zip)
+// fall through to passthrough.
+var compressibleTypes = []string{
+	"text/",
+	"application/json",
+	"application/javascript",
+	"application/xml",
+	"application/xhtml+xml",
+	"application/rss+xml",
+	"application/atom+xml",
+	"application/ld+json",
+	"application/manifest+json",
+	"image/svg+xml",
+	"font/ttf",
+	"font/otf",
 }
 
-func (w gzipResponseWriter) Flush() {
-	if f, ok := w.ResponseWriter.(http.Flusher); ok {
-		if gz, ok := w.Writer.(*gzip.Writer); ok {
-			gz.Flush()
+func isCompressibleType(ct string) bool {
+	if i := strings.IndexByte(ct, ';'); i >= 0 {
+		ct = strings.TrimSpace(ct[:i])
+	}
+	for _, p := range compressibleTypes {
+		if strings.HasPrefix(ct, p) {
+			return true
 		}
+	}
+	return false
+}
+
+type gzipResponseWriter struct {
+	http.ResponseWriter
+	gz          *gzip.Writer
+	decided     bool
+	passthrough bool
+}
+
+func (w *gzipResponseWriter) decide() {
+	if w.decided {
+		return
+	}
+	w.decided = true
+
+	// Handler already encoded (e.g. pre-gzipped asset): don't double-wrap.
+	if w.Header().Get("Content-Encoding") != "" {
+		w.passthrough = true
+		return
+	}
+
+	ct := w.Header().Get("Content-Type")
+	if !isCompressibleType(ct) {
+		w.passthrough = true
+		return
+	}
+
+	h := w.Header()
+	h.Del("Content-Length")
+	h.Set("Vary", "Accept-Encoding")
+	h.Set("Content-Encoding", "gzip")
+
+	w.gz = gzipWriterPool.Get().(*gzip.Writer)
+	w.gz.Reset(w.ResponseWriter)
+}
+
+func (w *gzipResponseWriter) WriteHeader(code int) {
+	w.decide()
+	w.ResponseWriter.WriteHeader(code)
+}
+
+func (w *gzipResponseWriter) Write(b []byte) (int, error) {
+	if !w.decided {
+		if w.Header().Get("Content-Type") == "" {
+			w.Header().Set("Content-Type", http.DetectContentType(b))
+		}
+		w.decide()
+	}
+	if w.passthrough {
+		return w.ResponseWriter.Write(b)
+	}
+	return w.gz.Write(b)
+}
+
+func (w *gzipResponseWriter) Flush() {
+	if w.gz != nil {
+		w.gz.Flush()
+	}
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
 	}
+}
+
+func (w *gzipResponseWriter) close() {
+	if w.gz == nil {
+		return
+	}
+	w.gz.Close()
+	w.gz.Reset(io.Discard)
+	gzipWriterPool.Put(w.gz)
+	w.gz = nil
 }
 
 func gzipMiddleware(next http.Handler) http.Handler {
@@ -160,20 +247,8 @@ func gzipMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Don't compress if already compressed or if it's an image/media
-		// This is a simple check, could be more exhaustive
-		if w.Header().Get("Content-Encoding") != "" {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		w.Header().Set("Vary", "Accept-Encoding")
-		w.Header().Set("Content-Encoding", "gzip")
-
-		gz := gzip.NewWriter(w)
-		defer gz.Close()
-
-		gzw := gzipResponseWriter{Writer: gz, ResponseWriter: w}
+		gzw := &gzipResponseWriter{ResponseWriter: w}
+		defer gzw.close()
 		next.ServeHTTP(gzw, r)
 	})
 }
