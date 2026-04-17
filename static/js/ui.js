@@ -6,6 +6,7 @@ import { BREAKPOINTS, TIMEOUTS } from './constants.js';
 import { elements } from './dom.js';
 
 export function updateUILanguage() {
+  document.documentElement.lang = state.lang;
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     el.textContent = t(key);
