@@ -568,8 +568,9 @@ select:hover { border-color: var(--accent); }
 #tutorial-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
+  /* Intentionally transparent: the tutorial points at real UI elements and
+     dimming them would defeat the purpose of the highlight mechanic. */
+  background: transparent;
   z-index: 3000;
   display: flex;
   align-items: center;

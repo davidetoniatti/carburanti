@@ -170,9 +170,6 @@ export function startTutorial() {
     nextBtn.addEventListener('click', goNext);
     backBtn.addEventListener('click', goBack);
     skipBtn.addEventListener('click', finishTutorial);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) finishTutorial();
-    });
     document.addEventListener('keydown', onKeydown, true);
 
     updateUI();
