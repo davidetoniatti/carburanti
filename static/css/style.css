@@ -84,7 +84,7 @@ body {
   display: none; /* Hidden by default (mobile) */
   position: absolute;
   top: 12px;
-  right: 12px;
+  right: 18px;
   background: var(--surface2);
   border: 1px solid var(--border);
   color: var(--text-muted);
@@ -262,7 +262,7 @@ body {
   transition: transform .3s cubic-bezier(.4,0,.2,1), visibility 0s .3s;
 }
 
-#historyPanelContent { padding: 12px 16px 24px; }
+#historyPanelContent { padding: 12px 18px 24px; }
 
 #historyList { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .history-item { 
@@ -439,8 +439,12 @@ select:hover { border-color: var(--accent); }
   transition: transform .3s cubic-bezier(.4,0,.2,1), visibility 0s .3s;
 }
 
-#panelContent { padding: 12px 16px 24px; }
+#panelContent { padding: 12px 18px 24px; }
 .station-brand { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.2; margin-bottom: 6px; }
+
+.station-header {
+  padding: 10px 0 0 0;
+}
 
 .station-address-container {
   display: flex;
@@ -1090,6 +1094,10 @@ select:hover { border-color: var(--accent); }
   }
   
   #legend { display: none; }
+
+  .station-header {
+    padding: 0;
+  }
 
   .search-wrap {
     max-width: 100%
