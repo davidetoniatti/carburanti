@@ -276,6 +276,7 @@ let firstSearchDone = false;
 export async function performSearch(lat, lng) {
   elements.searchHereBtn.classList.add('hidden');
   try {
+    closePanel();
     const data = await searchStations(lat, lng, state.radius, state.selectedFuelId);
     state.stationsById.clear();
     for (const s of (data.results || [])) {

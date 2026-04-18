@@ -13,13 +13,18 @@
   --yellow: #e0af68;
   --red: #f7768e;
 
+  --accent-tint: rgba(187, 154, 247, 0.1);
+  --accent-tint-strong: rgba(187, 154, 247, 0.15);
+
   --topbar-h: 60px;
   --panel-w: 380px;
 
-  --desktop-bp: 900px;
   --peek-vh: 50dvh;
   --full-vh: 0dvh;
   --hidden-vh: 100dvh;
+
+  --font-mono: 'Space Mono', monospace;
+  --panel-ease: cubic-bezier(.4, 0, .2, 1);
 }
 
 [data-theme="light"] {
@@ -34,6 +39,9 @@
   --green: #059669;
   --yellow: #d97706;
   --red: #dc2626;
+
+  --accent-tint: rgba(152, 84, 241, 0.12);
+  --accent-tint-strong: rgba(152, 84, 241, 0.15);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -49,24 +57,10 @@ body {
 
 #app { display: flex; flex-direction: column; height: 100dvh; }
 
-/* -- THEME TOGGLE -- */
-#themeToggle {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  padding: 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-#themeToggle:hover { border-color: var(--accent); color: var(--accent); }
-
-#themeToggle .sun-icon, 
-#themeToggle .moon-icon, 
-#themeToggle .device-icon, 
+/* -- THEME TOGGLE --*/
+#themeToggle .sun-icon,
+#themeToggle .moon-icon,
+#themeToggle .device-icon,
 #themeToggle .mobile-icon { display: none; }
 
 [data-theme-mode="light"] #themeToggle .sun-icon { display: block; }
@@ -81,7 +75,7 @@ body {
 }
 
 .desktop-only-close {
-  display: none; /* Hidden by default (mobile) */
+  display: none;
   position: absolute;
   top: 12px;
   right: 18px;
@@ -94,7 +88,7 @@ body {
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: border-color 0.2s, color 0.2s;
   z-index: 10;
 }
 @media (hover: hover) {
@@ -107,9 +101,6 @@ body {
   .desktop-only-close { display: flex; }
 }
 
-[data-theme="light"] .leaflet-tile { filter: none !important; }
-
-
 /* -- TOAST -- */
 .toast {
   position: fixed;
@@ -119,7 +110,7 @@ body {
   background: var(--surface2);
   border: 1px solid var(--border);
   color: var(--text);
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   padding: 10px 16px;
   border-radius: 8px;
@@ -159,7 +150,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -211,8 +202,6 @@ body {
   display: none;
 }
 
-/* Mobile-only controls inside the filter drawer.
-   Hidden by default (desktop); revealed by the mobile media query below. */
 #controls .mobile-only {
   display: none;
 }
@@ -234,13 +223,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: border-color 0.2s, color 0.2s, background-color 0.2s;
   flex-shrink: 0;
 }
 #themeToggle:hover, #filterToggle:hover, .history-btn:hover { border-color: var(--accent); color: var(--accent); }
 #filterToggle { display: none; }
-#filterToggle.active, .history-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(187, 154, 247, 0.1); }
+#filterToggle.active, .history-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-tint); }
 
+/* Shared drawer layout for the detail and history panels. */
+#panel,
 #historyPanel {
   position: fixed;
   top: var(--topbar-h);
@@ -253,15 +244,18 @@ body {
   overflow-y: auto;
   transform: translateX(0);
   visibility: visible;
-  transition: transform .3s cubic-bezier(.4,0,.2,1), visibility .3s;
+  transition: transform .3s var(--panel-ease), visibility .3s;
   border-radius: 12px 0 0 12px;
 }
-#historyPanel.hidden { 
-  transform: translateX(110%); 
+#panel.hidden,
+#historyPanel.hidden {
+  transform: translateX(110%);
   visibility: hidden;
-  transition: transform .3s cubic-bezier(.4,0,.2,1), visibility 0s .3s;
+  transition: transform .3s var(--panel-ease), visibility 0s .3s;
 }
+#panel { z-index: 1200; }
 
+#panelContent,
 #historyPanelContent { padding: 12px 18px 24px; }
 
 #historyList { list-style: none; display: flex; flex-direction: column; gap: 8px; }
@@ -275,7 +269,7 @@ body {
 }
 .history-item:hover { border-color: var(--accent); }
 .history-item-name { font-weight: 600; font-size: 14px; }
-.history-item-brand { font-size: 11px; color: var(--accent); font-family: 'Space Mono', monospace; }
+.history-item-brand { font-size: 11px; color: var(--accent); font-family: var(--font-mono); }
 .history-item-address { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
 .search-wrap {
@@ -284,11 +278,11 @@ body {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 8px;
-  overflow: visible; /* Changed from hidden to allow dropdown */
+  overflow: visible;
   transition: border-color .2s;
   max-width: 600px;
   flex: 1;
-  position: relative; /* Added for dropdown positioning */
+  position: relative;
   height: 40px;
 }
 .search-wrap:focus-within { border-color: var(--accent); }
@@ -364,7 +358,7 @@ select {
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  padding: 8px 28px 8px 12px;
+  padding: 10px 28px 10px 12px;
   border-radius: 8px;
   cursor: pointer;
   outline: none;
@@ -388,7 +382,7 @@ select:hover { border-color: var(--accent); }
   border: none;
   padding: 8px 16px;
   border-radius: 20px;
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -417,29 +411,7 @@ select:hover { border-color: var(--accent); }
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 
-/* -- DETAIL PANEL -- */
-#panel {
-  position: fixed;
-  top: var(--topbar-h);
-  right: 0;
-  bottom: 0;
-  width: var(--panel-w);
-  background: var(--surface);
-  border-left: 1px solid var(--border);
-  z-index: 1200;
-  overflow-y: auto;
-  transform: translateX(0);
-  visibility: visible;
-  transition: transform .3s cubic-bezier(.4,0,.2,1), visibility .3s;
-  border-radius: 12px 0 0 12px;
-}
-#panel.hidden { 
-  transform: translateX(110%); 
-  visibility: hidden;
-  transition: transform .3s cubic-bezier(.4,0,.2,1), visibility 0s .3s;
-}
-
-#panelContent { padding: 12px 18px 24px; }
+/* -- DETAIL PANEL CONTENT -- */
 .station-brand { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.2; margin-bottom: 6px; }
 
 .station-header {
@@ -454,10 +426,10 @@ select:hover { border-color: var(--accent); }
 }
 .station-address { font-size: 14px; color: var(--text-muted); line-height: 1.4; flex: 1; }
 
-.station-update { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); margin-top: 6px; }
-.station-distance { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.station-update { font-family: var(--font-mono); font-size: 11px; color: var(--accent); margin-top: 6px; }
+.station-distance { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 .station-map-link {
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
   color: var(--accent);
@@ -467,9 +439,9 @@ select:hover { border-color: var(--accent); }
   border-radius: 4px;
   background: var(--surface2);
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: border-color 0.2s, background-color 0.2s;
 }
-.station-map-link:hover { border-color: var(--accent); background: rgba(187, 154, 247, 0.1); }
+.station-map-link:hover { border-color: var(--accent); background: var(--accent-tint); }
 
 .station-footer {
   padding-top: 8px;
@@ -480,7 +452,7 @@ select:hover { border-color: var(--accent); }
   margin-bottom: 4px;
 }
 .footer-label {
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -494,7 +466,7 @@ select:hover { border-color: var(--accent); }
 }
 
 .section-title {
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
   margin: 16px 0 8px;
@@ -518,7 +490,7 @@ select:hover { border-color: var(--accent); }
   display: flex; 
   align-items: center; 
   gap: 12px; 
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
 }
 .price-group { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
 .price-label { font-size: 9px; color: var(--text-muted); margin-bottom: 2px; }
@@ -526,7 +498,7 @@ select:hover { border-color: var(--accent); }
 .price-sep { color: var(--border); font-weight: 300; font-size: 20px; }
 
 .info-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-.info-row .info-label { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-muted); width: 80px; }
+.info-row .info-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); width: 80px; }
 .info-row a { color: var(--accent); text-decoration: none; }
 
 /* -- LEGEND -- */
@@ -543,7 +515,7 @@ select:hover { border-color: var(--accent); }
   backdrop-filter: blur(8px);
 }
 .legend-title {
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--text-muted);
@@ -556,7 +528,7 @@ select:hover { border-color: var(--accent); }
   gap: 10px;
 }
 .legend-label {
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -572,8 +544,6 @@ select:hover { border-color: var(--accent); }
 #tutorial-overlay {
   position: fixed;
   inset: 0;
-  /* Intentionally transparent: the tutorial points at real UI elements and
-     dimming them would defeat the purpose of the highlight mechanic. */
   background: transparent;
   z-index: 3000;
   display: flex;
@@ -621,17 +591,16 @@ select:hover { border-color: var(--accent); }
   height: 56px;
   margin: 0 auto 16px;
   color: var(--accent);
-  background: rgba(187, 154, 247, 0.1);
+  background: var(--accent-tint);
   border-radius: 50%;
 }
-[data-theme="light"] .tutorial-icon { background: rgba(152, 84, 241, 0.12); }
 .tutorial-icon svg {
   width: 28px;
   height: 28px;
 }
 .tutorial-modal h2 {
   margin-bottom: 16px;
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 20px;
 }
 #tutorial-title em { color: var(--accent); font-style: normal; }
@@ -656,8 +625,6 @@ select:hover { border-color: var(--accent); }
   box-shadow: 0 0 0 4px var(--accent), 0 0 20px var(--accent) !important;
   transition: box-shadow 0.3s ease;
   pointer-events: none;
-  /* Subtle breathing pulse via filter (box-shadow !important can't be
-     overridden by animations; filter doesn't collide). */
   animation: tutorial-highlight-pulse 2s ease-in-out infinite;
 }
 @keyframes tutorial-highlight-pulse {
@@ -665,7 +632,7 @@ select:hover { border-color: var(--accent); }
   50%      { filter: drop-shadow(0 0 10px var(--accent)); }
 }
 
-/* -- SHORTCUTS HELP MODAL (reuses tutorial modal shell) -- */
+/* -- SHORTCUTS HELP MODAL -- */
 #shortcuts-help-overlay {
   position: fixed;
   inset: 0;
@@ -709,7 +676,7 @@ select:hover { border-color: var(--accent); }
   flex-shrink: 0;
 }
 .shortcut-keys kbd {
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   padding: 3px 8px;
   border-radius: 6px;
@@ -759,11 +726,10 @@ select:hover { border-color: var(--accent); }
 }
 .language-btn:hover { border-color: var(--accent); color: var(--accent); }
 .language-btn.active {
-  background: rgba(187, 154, 247, 0.15);
+  background: var(--accent-tint-strong);
   border-color: var(--accent);
   color: var(--accent);
 }
-[data-theme="light"] .language-btn.active { background: rgba(152, 84, 241, 0.15); }
 .language-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -863,7 +829,7 @@ select:hover { border-color: var(--accent); }
   padding: 1px 6px;
   min-width: 48px;
   height: 24px;
-  font-family: Space Mono, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 700;
   display: flex;
@@ -919,8 +885,7 @@ select:hover { border-color: var(--accent); }
     gap: 6px;
   }
   #logo { font-size: 14px; }
-  #logo .logo-text { font-weight: 700; }
-  .beta-tag { 
+  .beta-tag {
     display: block; 
     font-size: 9px;
   }
@@ -950,23 +915,12 @@ select:hover { border-color: var(--accent); }
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     border-radius: 0 0 12px 12px;
-    box-shadow: var(--shadow-md);
     transform: translateY(0);
     transition: transform 0.25s ease;
   }
 
   #mobileControlsSlot > #controls.mobile-hidden {
     transform: translateY(calc(-100% - 12px));
-  }
-
-  #mobileControlsSlot > #controls .sheet-header {
-    display: flex;
-    order: 10;
-    width: 100%;
-    height: 36px;
-    align-items: center;
-    justify-content: center;
-    margin-top: 8px;
   }
 
   #mobileControlsSlot > #controls .mobile-only {
@@ -996,8 +950,9 @@ select:hover { border-color: var(--accent); }
     display: flex;
   }
 
-  /* Remove old #controls rule */
-  #controls { display: none; } 
+  /* Hide #controls until JS moves it into #mobileControlsSlot. Prevents a
+     flash of the desktop-inline layout on mobile before bootstrap runs. */
+  #controls { display: none; }
 
   .sheet-header {
     width: 100%;
@@ -1013,9 +968,12 @@ select:hover { border-color: var(--accent); }
   }
   .sheet-header:active { cursor: grabbing; }
 
-  /* For top panels, handle area is at the bottom */
+  /* For top panels, handle area is at the bottom. display: flex overrides
+     the base-level `#controls .sheet-header { display: none }` that hides
+     the handle on desktop's inline controls layout. */
   #controls .sheet-header {
-    order: 10; /* Ensure it stays at bottom of the flex container */
+    display: flex;
+    order: 10;
     margin-top: 8px;
   }
 
@@ -1029,68 +987,41 @@ select:hover { border-color: var(--accent); }
     pointer-events: none; /* Let header handle the touches */
   }
 
-  #panel {
-    width: 100%; 
-    height: 80dvh; 
-    bottom: 0; 
-    top: auto; 
-    border-left: none; 
-    visibility: visible; 
+  /* Bottom sheets on mobile. Shared geometry; #panel and #historyPanel
+     differ only in their separator (shadow above vs. border-top). */
+  #panel,
+  #historyPanel {
+    width: 100%;
+    height: 80dvh;
+    top: auto;
+    bottom: 0;
+    border-left: none;
     border-radius: 16px 16px 0 0;
     transform: translateY(var(--hidden-vh));
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
-    overflow: hidden; /* Fix handle at top */
+    transition: transform 0.3s var(--panel-ease);
+    overflow: hidden; /* keep the handle pinned to the top */
     display: flex;
     flex-direction: column;
     z-index: 1150;
   }
-  #panel.hidden { 
-    transform: translateY(var(--hidden-vh)); 
+  #panel { box-shadow: 0 -4px 12px rgba(0,0,0,0.1); }
+  #historyPanel { border-top: 1px solid var(--border); }
+
+  #panel.hidden,
+  #historyPanel.hidden {
+    transform: translateY(var(--hidden-vh));
     visibility: hidden;
   }
-  #panel.peek {
-    transform: translateY(var(--peek-vh));
-  }
-  #panel.full {
-    transform: translateY(var(--full-vh));
-  }
-  
+  #panel.peek,
+  #historyPanel.peek { transform: translateY(var(--peek-vh)); }
+  #panel.full,
+  #historyPanel.full { transform: translateY(var(--full-vh)); }
+
   .scrollable-content {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
-  }
-
-  #historyPanel {
-    position: fixed;
-    top: auto;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 80dvh;
-    background: var(--surface);
-    border-left: none;
-    border-top: 1px solid var(--border);
-    z-index: 1150;
-    transform: translateY(var(--hidden-vh));
-    visibility: visible;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 16px 16px 0 0;
-    overflow: hidden; /* Fix handle at top */
-    display: flex;
-    flex-direction: column;
-  }
-  #historyPanel.hidden { 
-    transform: translateY(var(--hidden-vh)); 
-    visibility: hidden;
-  }
-  #historyPanel.peek {
-    transform: translateY(var(--peek-vh));
-  }
-  #historyPanel.full {
-    transform: translateY(var(--full-vh));
   }
   
   #legend { display: none; }
@@ -1100,7 +1031,7 @@ select:hover { border-color: var(--accent); }
   }
 
   .search-wrap {
-    max-width: 100%
+    max-width: 100%;
   }
   select {
     width: 100%;
@@ -1114,7 +1045,7 @@ select:hover { border-color: var(--accent); }
   }
 }
 
-.leaflet-tile { filter: brightness(0.7) saturate(0.4) hue-rotate(180deg) invert(0.9); }
+[data-theme="dark"] .leaflet-tile { filter: brightness(0.7) saturate(0.4) hue-rotate(180deg) invert(0.9); }
 .leaflet-container { background: var(--bg); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
