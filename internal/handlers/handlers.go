@@ -41,7 +41,7 @@ func (s *Server) SearchHandler(w http.ResponseWriter, r *http.Request) {
 	lat, _ := r.Context().Value(LatKey).(float64)
 	lng, _ := r.Context().Value(LngKey).(float64)
 	radius, _ := r.Context().Value(RadiusKey).(int)
-	
+
 	fuelIDStr := r.URL.Query().Get("fuel")
 	fuelID, _ := strconv.Atoi(fuelIDStr)
 

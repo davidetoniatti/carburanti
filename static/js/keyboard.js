@@ -1,29 +1,29 @@
-import { elements } from './dom.js';
-import { t, translations } from './i18n.js';
-import { toggleHistoryPanel, updateUILanguage } from './ui.js';
-import { closePanel, closeHistoryPanel } from './app.js';
-import { startTutorial } from './tutorial.js';
-import { state, updateURL } from './state.js';
-import { STORAGE_KEYS } from './constants.js';
+import { elements } from "./dom.js";
+import { t, translations } from "./i18n.js";
+import { toggleHistoryPanel, updateUILanguage } from "./ui.js";
+import { closePanel, closeHistoryPanel } from "./app.js";
+import { startTutorial } from "./tutorial.js";
+import { state, updateURL } from "./state.js";
+import { STORAGE_KEYS } from "./constants.js";
 
 // Human-readable native names for the languages we support. Not translated —
 // each name represents itself.
 const LANGUAGE_NATIVE = {
-  en: 'English',
-  it: 'Italiano',
+  en: "English",
+  it: "Italiano",
 };
 
 const FOCUSABLE_SELECTOR = 'button, [href], [tabindex]:not([tabindex="-1"])';
 
 const SHORTCUTS = [
-  { keys: ['Esc'],       labelKey: 'shortcut_escape' },
-  { keys: ['/'],         labelKey: 'shortcut_search' },
-  { keys: ['Ctrl', 'K'], labelKey: 'shortcut_search' },
-  { keys: ['H'],         labelKey: 'shortcut_history' },
-  { keys: ['L'],         labelKey: 'shortcut_locate' },
-  { keys: ['T'],         labelKey: 'shortcut_theme' },
-  { keys: ['R'],         labelKey: 'shortcut_refresh' },
-  { keys: ['?'],         labelKey: 'shortcut_help' },
+  { keys: ["Esc"], labelKey: "shortcut_escape" },
+  { keys: ["/"], labelKey: "shortcut_search" },
+  { keys: ["Ctrl", "K"], labelKey: "shortcut_search" },
+  { keys: ["H"], labelKey: "shortcut_history" },
+  { keys: ["L"], labelKey: "shortcut_locate" },
+  { keys: ["T"], labelKey: "shortcut_theme" },
+  { keys: ["R"], labelKey: "shortcut_refresh" },
+  { keys: ["?"], labelKey: "shortcut_help" },
 ];
 
 // True when an element is present in the layout tree (not display:none,
@@ -36,7 +36,7 @@ function isRendered(el) {
 function isEditable(el) {
   if (!el) return false;
   const tag = el.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
   return !!el.isContentEditable;
 }
 
@@ -52,30 +52,33 @@ function focusSearch() {
 }
 
 function clickIfPresent(el) {
-  if (!el || el.classList.contains('hidden')) return false;
+  if (!el || el.classList.contains("hidden")) return false;
   el.click();
   return true;
 }
 
 function closeTopmost() {
-  const help = document.getElementById('shortcuts-help-overlay');
+  const help = document.getElementById("shortcuts-help-overlay");
   if (help) {
-    help.dispatchEvent(new CustomEvent('helpClose'));
+    help.dispatchEvent(new CustomEvent("helpClose"));
     return true;
   }
 
   const sugg = elements.searchSuggestions;
-  if (sugg && !sugg.classList.contains('hidden')) {
-    sugg.classList.add('hidden');
+  if (sugg && !sugg.classList.contains("hidden")) {
+    sugg.classList.add("hidden");
     return true;
   }
 
-  if (elements.panel && !elements.panel.classList.contains('hidden')) {
+  if (elements.panel && !elements.panel.classList.contains("hidden")) {
     closePanel();
     return true;
   }
 
-  if (elements.historyPanel && !elements.historyPanel.classList.contains('hidden')) {
+  if (
+    elements.historyPanel &&
+    !elements.historyPanel.classList.contains("hidden")
+  ) {
     closeHistoryPanel();
     return true;
   }
@@ -85,10 +88,10 @@ function closeTopmost() {
   if (
     isRendered(elements.filterToggle) &&
     elements.controls &&
-    !elements.controls.classList.contains('mobile-hidden')
+    !elements.controls.classList.contains("mobile-hidden")
   ) {
-    elements.controls.classList.add('mobile-hidden');
-    elements.filterToggle.classList.remove('active');
+    elements.controls.classList.add("mobile-hidden");
+    elements.filterToggle.classList.remove("active");
     return true;
   }
 
@@ -96,18 +99,18 @@ function closeTopmost() {
 }
 
 export function bindKeyboardShortcuts() {
-  document.addEventListener('keydown', (e) => {
+  document.addEventListener("keydown", (e) => {
     // Tutorial owns its own keys; get out of its way.
-    if (document.getElementById('tutorial-overlay')) return;
+    if (document.getElementById("tutorial-overlay")) return;
 
     // Escape: works in any focus context — let the topmost surface close first.
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       if (closeTopmost()) e.preventDefault();
       return;
     }
 
     // Ctrl/Cmd+K: universal "open search".
-    if ((e.key === 'k' || e.key === 'K') && hasMod(e)) {
+    if ((e.key === "k" || e.key === "K") && hasMod(e)) {
       e.preventDefault();
       focusSearch();
       return;
@@ -117,31 +120,31 @@ export function bindKeyboardShortcuts() {
     if (isEditable(document.activeElement) || hasMod(e) || e.altKey) return;
 
     switch (e.key) {
-      case '/':
+      case "/":
         e.preventDefault();
         focusSearch();
         break;
-      case '?':
+      case "?":
         e.preventDefault();
         openShortcutsHelp();
         break;
-      case 'h':
-      case 'H':
+      case "h":
+      case "H":
         e.preventDefault();
         toggleHistoryPanel();
         break;
-      case 'l':
-      case 'L':
+      case "l":
+      case "L":
         e.preventDefault();
         elements.locateBtn?.click();
         break;
-      case 't':
-      case 'T':
+      case "t":
+      case "T":
         e.preventDefault();
         elements.themeToggle?.click();
         break;
-      case 'r':
-      case 'R':
+      case "r":
+      case "R":
         e.preventDefault();
         clickIfPresent(elements.searchHereBtn);
         break;
@@ -160,47 +163,47 @@ export function refreshHelpModalIfActive() {
 }
 
 export function openShortcutsHelp() {
-  if (document.getElementById('shortcuts-help-overlay')) return;
+  if (document.getElementById("shortcuts-help-overlay")) return;
 
   const previouslyFocused = document.activeElement;
 
-  const overlay = document.createElement('div');
-  overlay.id = 'shortcuts-help-overlay';
+  const overlay = document.createElement("div");
+  overlay.id = "shortcuts-help-overlay";
 
-  const modal = document.createElement('div');
-  modal.className = 'tutorial-modal shortcuts-modal';
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-labelledby', 'shortcuts-help-title');
+  const modal = document.createElement("div");
+  modal.className = "tutorial-modal shortcuts-modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "shortcuts-help-title");
   modal.tabIndex = -1;
 
-  const heading = document.createElement('h2');
-  heading.id = 'shortcuts-help-title';
+  const heading = document.createElement("h2");
+  heading.id = "shortcuts-help-title";
 
-  const langSection = document.createElement('div');
-  langSection.className = 'language-section';
-  const langLabel = document.createElement('div');
-  langLabel.className = 'section-subtitle';
-  const langButtons = document.createElement('div');
-  langButtons.className = 'language-buttons';
+  const langSection = document.createElement("div");
+  langSection.className = "language-section";
+  const langLabel = document.createElement("div");
+  langLabel.className = "section-subtitle";
+  const langButtons = document.createElement("div");
+  langButtons.className = "language-buttons";
   langSection.append(langLabel, langButtons);
 
-  const list = document.createElement('ul');
-  list.className = 'shortcuts-list';
+  const list = document.createElement("ul");
+  list.className = "shortcuts-list";
 
-  const actions = document.createElement('div');
-  actions.className = 'tutorial-actions';
+  const actions = document.createElement("div");
+  actions.className = "tutorial-actions";
 
-  const replayBtn = document.createElement('button');
-  replayBtn.type = 'button';
-  replayBtn.className = 'btn-text';
+  const replayBtn = document.createElement("button");
+  replayBtn.type = "button";
+  replayBtn.className = "btn-text";
 
-  const spacer = document.createElement('div');
-  spacer.className = 'spacer';
+  const spacer = document.createElement("div");
+  spacer.className = "spacer";
 
-  const closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'btn-primary';
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "btn-primary";
 
   actions.append(replayBtn, spacer, closeBtn);
   modal.append(heading, langSection, list, actions);
@@ -208,42 +211,42 @@ export function openShortcutsHelp() {
   document.body.appendChild(overlay);
 
   const render = () => {
-    heading.textContent = t('shortcuts_title');
-    langLabel.textContent = t('language_label');
-    replayBtn.textContent = t('replay_tutorial');
-    closeBtn.textContent = t('close');
+    heading.textContent = t("shortcuts_title");
+    langLabel.textContent = t("language_label");
+    replayBtn.textContent = t("replay_tutorial");
+    closeBtn.textContent = t("close");
 
     list.replaceChildren();
     for (const s of SHORTCUTS) {
-      const li = document.createElement('li');
-      const keys = document.createElement('span');
-      keys.className = 'shortcut-keys';
+      const li = document.createElement("li");
+      const keys = document.createElement("span");
+      keys.className = "shortcut-keys";
       s.keys.forEach((k, i) => {
-        const kbd = document.createElement('kbd');
+        const kbd = document.createElement("kbd");
         kbd.textContent = k;
         keys.appendChild(kbd);
-        if (i < s.keys.length - 1) keys.append('+');
+        if (i < s.keys.length - 1) keys.append("+");
       });
-      const label = document.createElement('span');
-      label.className = 'shortcut-label';
+      const label = document.createElement("span");
+      label.className = "shortcut-label";
       label.textContent = t(s.labelKey);
       li.append(keys, label);
       list.appendChild(li);
     }
 
     langButtons.replaceChildren();
-    Object.keys(translations).forEach(code => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'language-btn' + (state.lang === code ? ' active' : '');
+    Object.keys(translations).forEach((code) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "language-btn" + (state.lang === code ? " active" : "");
       btn.textContent = LANGUAGE_NATIVE[code] || code;
-      btn.addEventListener('click', () => {
+      btn.addEventListener("click", () => {
         if (state.lang === code) return;
         state.lang = code;
         updateUILanguage();
         updateURL();
         // render() replaced the buttons; move focus back onto the new active one.
-        langButtons.querySelector('.language-btn.active')?.focus();
+        langButtons.querySelector(".language-btn.active")?.focus();
       });
       langButtons.appendChild(btn);
     });
@@ -254,25 +257,25 @@ export function openShortcutsHelp() {
 
   const close = () => {
     activeHelpRefresh = null;
-    document.removeEventListener('keydown', onKeydown, true);
-    overlay.removeEventListener('helpClose', close);
-    overlay.classList.add('fade-out');
+    document.removeEventListener("keydown", onKeydown, true);
+    overlay.removeEventListener("helpClose", close);
+    overlay.classList.add("fade-out");
     const remove = () => {
       overlay.remove();
-      if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+      if (previouslyFocused && typeof previouslyFocused.focus === "function") {
         previouslyFocused.focus();
       }
     };
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       remove();
     } else {
-      overlay.addEventListener('transitionend', remove, { once: true });
+      overlay.addEventListener("transitionend", remove, { once: true });
     }
   };
 
   const onKeydown = (e) => {
     if (!overlay.isConnected) return;
-    if (e.key === 'Tab') {
+    if (e.key === "Tab") {
       const focusables = Array.from(modal.querySelectorAll(FOCUSABLE_SELECTOR));
       if (focusables.length === 0) return;
       const first = focusables[0];
@@ -287,15 +290,17 @@ export function openShortcutsHelp() {
     }
   };
 
-  replayBtn.addEventListener('click', () => {
+  replayBtn.addEventListener("click", () => {
     close();
     localStorage.removeItem(STORAGE_KEYS.TUTORIAL_SEEN);
     startTutorial();
   });
-  closeBtn.addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-  overlay.addEventListener('helpClose', close);
-  document.addEventListener('keydown', onKeydown, true);
+  closeBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  overlay.addEventListener("helpClose", close);
+  document.addEventListener("keydown", onKeydown, true);
 
   closeBtn.focus();
 }

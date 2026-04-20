@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state } from "./state.js";
 
 export const translations = {
   en: {
@@ -11,7 +11,8 @@ export const translations = {
     lang_label: "LANG",
     search_label: "SEARCH",
     search_placeholder: "City or address...",
-    status_initial: "Click on the map or use localization to search for stations",
+    status_initial:
+      "Click on the map or use localization to search for stations",
     loading_details: "Loading details...",
     price_legend: "PRICE EUR/L",
     price_low: "low",
@@ -50,12 +51,17 @@ export const translations = {
     btn_skip: "Skip",
     btn_finish: "Start Exploring",
     tutorial_title: "Welcome to",
-    tutorial_step1: "Find the cheapest fuel prices near you. Data comes from the official MIMIT API.",
-    tutorial_step2: "Use the map and click any station marker to view fuel prices and other details.",
-    tutorial_step3: "Use the search bar to find stations in a specific city or near an address.",
+    tutorial_step1:
+      "Find the cheapest fuel prices near you. Data comes from the official MIMIT API.",
+    tutorial_step2:
+      "Use the map and click any station marker to view fuel prices and other details.",
+    tutorial_step3:
+      "Use the search bar to find stations in a specific city or near an address.",
     tutorial_step4: "Choose your fuel type and search radius.",
-    tutorial_step5: "Click the history button to view your recently viewed stations.",
-    tutorial_step6: "Switch between dark and light mode based on your preference.",
+    tutorial_step5:
+      "Click the history button to view your recently viewed stations.",
+    tutorial_step6:
+      "Switch between dark and light mode based on your preference.",
     tutorial_step7: "Use geolocation to find nearby stations.",
     language_label: "Language",
     shortcuts_title: "Keyboard Shortcuts",
@@ -80,7 +86,8 @@ export const translations = {
     lang_label: "LINGUA",
     search_label: "CERCA",
     search_placeholder: "Città o indirizzo...",
-    status_initial: "Clicca sulla mappa o usa la localizzazione per cercare stazioni",
+    status_initial:
+      "Clicca sulla mappa o usa la localizzazione per cercare stazioni",
     loading_details: "Caricamento dettagli...",
     price_legend: "PREZZO EUR/L",
     price_low: "basso",
@@ -119,13 +126,19 @@ export const translations = {
     btn_skip: "Salta",
     btn_finish: "Inizia a Esplorare",
     tutorial_title: "Benvenuto su",
-    tutorial_step1: "Trova i prezzi del carburante più convenienti vicino a te. I dati provengono dall'API ufficiale del MIMIT.",
-    tutorial_step2: "Usa la mappa e tocca un indicatore di stazione per visualizzare i prezzi del carburante e altri dettagli.",
-    tutorial_step3: "Usa la barra di ricerca per trovare le stazioni in una città specifica o vicino a un indirizzo.",
+    tutorial_step1:
+      "Trova i prezzi del carburante più convenienti vicino a te. I dati provengono dall'API ufficiale del MIMIT.",
+    tutorial_step2:
+      "Usa la mappa e tocca un indicatore di stazione per visualizzare i prezzi del carburante e altri dettagli.",
+    tutorial_step3:
+      "Usa la barra di ricerca per trovare le stazioni in una città specifica o vicino a un indirizzo.",
     tutorial_step4: "Scegli il tipo di carburante e il raggio di ricerca.",
-    tutorial_step5: "Tocca il pulsante della cronologia per visualizzare le stazioni visualizzate di recente.",
-    tutorial_step6: "Passa dalla modalità chiara a quella scura in base alle tue preferenze.",
-    tutorial_step7: "Usa la geolocalizzazione per trovare le stazioni nelle vicinanze.",
+    tutorial_step5:
+      "Tocca il pulsante della cronologia per visualizzare le stazioni visualizzate di recente.",
+    tutorial_step6:
+      "Passa dalla modalità chiara a quella scura in base alle tue preferenze.",
+    tutorial_step7:
+      "Usa la geolocalizzazione per trovare le stazioni nelle vicinanze.",
     language_label: "Lingua",
     shortcuts_title: "Scorciatoie da tastiera",
     shortcut_escape: "Chiudi pannello o finestra",
@@ -138,14 +151,14 @@ export const translations = {
     help_btn_label: "Aiuto",
     replay_tutorial: "Riavvia il tutorial",
     close: "Chiudi",
-  }
+  },
 };
 
 export function t(key, params = {}) {
   let lang = state.lang;
-  if (!translations[lang]) lang = 'en';
+  if (!translations[lang]) lang = "en";
   let text = translations[lang][key] || key;
-  Object.keys(params).forEach(p => {
+  Object.keys(params).forEach((p) => {
     text = text.replace(`{${p}}`, params[p]);
   });
   return text;

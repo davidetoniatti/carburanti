@@ -1,4 +1,4 @@
-import { SEARCH_CONFIG, HISTORY_CONFIG } from './constants.js';
+import { SEARCH_CONFIG, HISTORY_CONFIG } from "./constants.js";
 
 export const state = {
   map: null,
@@ -8,8 +8,8 @@ export const state = {
   selectedFuelId: null,
   radius: SEARCH_CONFIG.DEFAULT_RADIUS,
   selectedStationId: null,
-  lang: 'en',
-  theme: 'dark',
+  lang: "en",
+  theme: "dark",
   requests: {
     searchAbortController: null,
     detailAbortController: null,
@@ -45,11 +45,11 @@ export function getStateFromURL() {
   const params = new URLSearchParams(window.location.search);
 
   return {
-    lat: parseFloat(params.get('lat')),
-    lng: parseFloat(params.get('lng')),
-    zoom: parseInt(params.get('zoom'), 10),
-    fuel: parseInt(params.get('fuel'), 10),
-    radius: parseInt(params.get('radius'), 10),
+    lat: parseFloat(params.get("lat")),
+    lng: parseFloat(params.get("lng")),
+    zoom: parseInt(params.get("zoom"), 10),
+    fuel: parseInt(params.get("fuel"), 10),
+    radius: parseInt(params.get("radius"), 10),
   };
 }
 
@@ -58,17 +58,17 @@ export function updateURL() {
 
   if (state.map) {
     const center = state.map.getCenter();
-    params.set('lat', center.lat.toFixed(6));
-    params.set('lng', center.lng.toFixed(6));
-    params.set('zoom', state.map.getZoom());
+    params.set("lat", center.lat.toFixed(6));
+    params.set("lng", center.lng.toFixed(6));
+    params.set("zoom", state.map.getZoom());
   }
 
   if (state.selectedFuelId) {
-    params.set('fuel', state.selectedFuelId);
+    params.set("fuel", state.selectedFuelId);
   }
 
-  params.set('radius', state.radius);
+  params.set("radius", state.radius);
 
   const newRelativePathQuery = `${window.location.pathname}?${params.toString()}`;
-  window.history.replaceState(null, '', newRelativePathQuery);
+  window.history.replaceState(null, "", newRelativePathQuery);
 }

@@ -1,15 +1,39 @@
-import { state, getStateFromURL, updateURL, addToHistory } from './state.js';
-import { hasLocale, t } from './i18n.js';
-import { fetchFuels, searchStations, geocodeAddress, fetchStationDetails } from './api.js';
-import { initMap, syncMarkers, selectMarker, setUserLocationMarker } from './map.js';
-import { updateUILanguage, closePanelUI, toggleHistoryPanel, closeHistoryPanelUI, renderPanel, showToast, bindHistoryEvents } from './ui.js';
-import { Sheet } from './Sheet.js';
-import { checkTutorial } from './tutorial.js';
-import { bindKeyboardShortcuts, openShortcutsHelp } from './keyboard.js';
-import { BREAKPOINTS, TIMEOUTS, MAP_CONFIG, SEARCH_CONFIG, STORAGE_KEYS } from './constants.js';
-import { elements } from './dom.js';
+import { state, getStateFromURL, updateURL, addToHistory } from "./state.js";
+import { hasLocale, t } from "./i18n.js";
+import {
+  fetchFuels,
+  searchStations,
+  geocodeAddress,
+  fetchStationDetails,
+} from "./api.js";
+import {
+  initMap,
+  syncMarkers,
+  selectMarker,
+  setUserLocationMarker,
+} from "./map.js";
+import {
+  updateUILanguage,
+  closePanelUI,
+  toggleHistoryPanel,
+  closeHistoryPanelUI,
+  renderPanel,
+  showToast,
+  bindHistoryEvents,
+} from "./ui.js";
+import { Sheet } from "./Sheet.js";
+import { checkTutorial } from "./tutorial.js";
+import { bindKeyboardShortcuts, openShortcutsHelp } from "./keyboard.js";
+import {
+  BREAKPOINTS,
+  TIMEOUTS,
+  MAP_CONFIG,
+  SEARCH_CONFIG,
+  STORAGE_KEYS,
+} from "./constants.js";
+import { elements } from "./dom.js";
 
-document.addEventListener('DOMContentLoaded', bootstrapApp);
+document.addEventListener("DOMContentLoaded", bootstrapApp);
 
 export function closePanel() {
   closePanelUI();
@@ -17,7 +41,7 @@ export function closePanel() {
 
   if (state.selectedStationId && state.markers.has(state.selectedStationId)) {
     const entry = state.markers.get(state.selectedStationId);
-    if (entry.el) entry.el.classList.remove('selected');
+    if (entry.el) entry.el.classList.remove("selected");
     entry.marker.setZIndexOffset(0);
   }
   state.selectedStationId = null;
@@ -27,20 +51,21 @@ export function closeHistoryPanel() {
   closeHistoryPanelUI();
 }
 
-
 async function bootstrapApp() {
-  const browserLang = navigator.language.split('-')[0];
+  const browserLang = navigator.language.split("-")[0];
   if (hasLocale(browserLang)) state.lang = browserLang;
 
-  const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 'device';
+  const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || "device";
   setTheme(savedTheme);
 
   // Listen for live system theme changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (state.theme === 'device') {
-      applyThemeByMode('device');
-    }
-  });
+  window
+    .matchMedia("(prefers-color-scheme: dark)")
+    .addEventListener("change", () => {
+      if (state.theme === "device") {
+        applyThemeByMode("device");
+      }
+    });
 
   // Responsive Controls Slots
   const mq = window.matchMedia("(max-width: 900px)");
@@ -62,8 +87,8 @@ async function bootstrapApp() {
     elements.radiusSelect.value = state.radius;
   }
 
-  const startLat  = urlState.lat  || MAP_CONFIG.DEFAULT_LAT;
-  const startLng  = urlState.lng  || MAP_CONFIG.DEFAULT_LNG;
+  const startLat = urlState.lat || MAP_CONFIG.DEFAULT_LAT;
+  const startLng = urlState.lng || MAP_CONFIG.DEFAULT_LNG;
   const startZoom = urlState.zoom || MAP_CONFIG.DEFAULT_ZOOM;
 
   initMap(performSearch, openStationById, [startLat, startLng], startZoom);
@@ -72,9 +97,9 @@ async function bootstrapApp() {
   bindControls();
   bindHistoryEvents(openStationById);
   bindKeyboardShortcuts();
-  new Sheet('panel', 'bottom');
-  new Sheet('historyPanel', 'bottom');
-  new Sheet('controls', 'top');
+  new Sheet("panel", "bottom");
+  new Sheet("historyPanel", "bottom");
+  new Sheet("controls", "top");
 
   // If no location in URL, try geolocating
   if (!urlState.lat && !urlState.lng && navigator.geolocation) {
@@ -90,7 +115,7 @@ async function bootstrapApp() {
         // Fallback to default search if geo fails
         performSearch(startLat, startLng);
       },
-      { timeout: TIMEOUTS.GEO_MS }
+      { timeout: TIMEOUTS.GEO_MS },
     );
   } else {
     performSearch(startLat, startLng);
@@ -105,16 +130,18 @@ function setTheme(mode) {
 
 function applyThemeByMode(mode) {
   let activeTheme = mode;
-  if (mode === 'device') {
-    activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  if (mode === "device") {
+    activeTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   }
-  
-  document.documentElement.setAttribute('data-theme', activeTheme);
-  document.documentElement.setAttribute('data-theme-mode', mode);
+
+  document.documentElement.setAttribute("data-theme", activeTheme);
+  document.documentElement.setAttribute("data-theme-mode", mode);
 }
 
 function toggleTheme() {
-  const modes = ['device', 'dark', 'light'];
+  const modes = ["device", "dark", "light"];
   const currentIndex = modes.indexOf(state.theme);
   const nextIndex = (currentIndex + 1) % modes.length;
   setTheme(modes[nextIndex]);
@@ -122,16 +149,17 @@ function toggleTheme() {
 
 async function loadFuels(defaultFuelId) {
   state.fuels = await fetchFuels();
-  elements.fuelSelect.innerHTML = state.fuels.map(f =>
-    `<option value="${f.id}">${f.name}</option>`
-  ).join('');
+  elements.fuelSelect.innerHTML = state.fuels
+    .map((f) => `<option value="${f.id}">${f.name}</option>`)
+    .join("");
 
-  const validDefault = defaultFuelId && state.fuels.some(f => f.id === defaultFuelId);
-  state.selectedFuelId = validDefault ? defaultFuelId : (state.fuels[0]?.id || 1);
+  const validDefault =
+    defaultFuelId && state.fuels.some((f) => f.id === defaultFuelId);
+  state.selectedFuelId = validDefault ? defaultFuelId : state.fuels[0]?.id || 1;
   elements.fuelSelect.value = state.selectedFuelId;
   if (!validDefault) updateURL();
 
-  elements.fuelSelect.addEventListener('change', () => {
+  elements.fuelSelect.addEventListener("change", () => {
     state.selectedFuelId = parseInt(elements.fuelSelect.value);
     const c = state.map.getCenter();
     performSearch(c.lat, c.lng);
@@ -140,16 +168,16 @@ async function loadFuels(defaultFuelId) {
 }
 
 function bindControls() {
-  elements.radiusSelect.addEventListener('change', (e) => {
+  elements.radiusSelect.addEventListener("change", (e) => {
     state.radius = parseInt(e.target.value);
     const c = state.map.getCenter();
     performSearch(c.lat, c.lng);
     updateURL();
   });
 
-  elements.locateBtn.addEventListener('click', () => {
+  elements.locateBtn.addEventListener("click", () => {
     if (!navigator.geolocation) {
-      showToast(t('geo_not_supported'), 'error');
+      showToast(t("geo_not_supported"), "error");
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -160,36 +188,36 @@ function bindControls() {
         state.map.setView([latitude, longitude], MAP_CONFIG.DEFAULT_ZOOM);
         performSearch(latitude, longitude);
       },
-      ()    => showToast(t('pos_error'), 'error'),
-      { timeout: TIMEOUTS.GEO_MS }
+      () => showToast(t("pos_error"), "error"),
+      { timeout: TIMEOUTS.GEO_MS },
     );
   });
 
-  elements.historyToggle.addEventListener('click', toggleHistoryPanel);
+  elements.historyToggle.addEventListener("click", toggleHistoryPanel);
 
-  elements.panel.addEventListener('sheetClosed', closePanel);
-  elements.historyPanel.addEventListener('sheetClosed', closeHistoryPanel);
+  elements.panel.addEventListener("sheetClosed", closePanel);
+  elements.historyPanel.addEventListener("sheetClosed", closeHistoryPanel);
 
-  elements.filterToggle.addEventListener('click', () => {
-    elements.filterToggle.classList.toggle('active');
-    elements.controls.classList.toggle('mobile-hidden');
+  elements.filterToggle.addEventListener("click", () => {
+    elements.filterToggle.classList.toggle("active");
+    elements.controls.classList.toggle("mobile-hidden");
   });
 
-  elements.controls.addEventListener('sheetClosed', () => {
-    elements.filterToggle.classList.remove('active');
+  elements.controls.addEventListener("sheetClosed", () => {
+    elements.filterToggle.classList.remove("active");
   });
 
-  elements.searchHereBtn.addEventListener('click', () => {
+  elements.searchHereBtn.addEventListener("click", () => {
     const c = state.map.getCenter();
     performSearch(c.lat, c.lng);
   });
 
-  elements.themeToggle.addEventListener('click', toggleTheme);
+  elements.themeToggle.addEventListener("click", toggleTheme);
 
-  elements.panelClose.addEventListener('click', closePanel);
-  elements.historyPanelClose.addEventListener('click', closeHistoryPanel);
+  elements.panelClose.addEventListener("click", closePanel);
+  elements.historyPanelClose.addEventListener("click", closeHistoryPanel);
 
-  elements.helpBtn?.addEventListener('click', () => {
+  elements.helpBtn?.addEventListener("click", () => {
     openShortcutsHelp();
   });
 
@@ -199,23 +227,25 @@ function bindControls() {
 function resetSearchUI() {
   closePanel();
   closeHistoryPanel();
-  elements.searchSuggestions.classList.add('hidden');
+  elements.searchSuggestions.classList.add("hidden");
 }
 
 function bindAddressSearch() {
-  const addressInput  = elements.addressSearch;
-  const searchBtn     = elements.searchBtn;
+  const addressInput = elements.addressSearch;
+  const searchBtn = elements.searchBtn;
   const suggestionsBox = elements.searchSuggestions;
   let debounceTimeout;
 
-
-  addressInput.addEventListener('input', () => {
+  addressInput.addEventListener("input", () => {
     clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => showSuggestions(addressInput, suggestionsBox), TIMEOUTS.SUGGESTIONS_DEBOUNCE_MS);
+    debounceTimeout = setTimeout(
+      () => showSuggestions(addressInput, suggestionsBox),
+      TIMEOUTS.SUGGESTIONS_DEBOUNCE_MS,
+    );
   });
 
-  suggestionsBox.addEventListener('click', (e) => {
-    const item = e.target.closest('.suggestion-item');
+  suggestionsBox.addEventListener("click", (e) => {
+    const item = e.target.closest(".suggestion-item");
     if (!item) return;
     const lat = parseFloat(item.dataset.lat);
     const lon = parseFloat(item.dataset.lon);
@@ -225,8 +255,9 @@ function bindAddressSearch() {
     resetSearchUI();
   });
 
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-wrap')) suggestionsBox.classList.add('hidden');
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".search-wrap"))
+      suggestionsBox.classList.add("hidden");
   });
 
   const doSearch = async () => {
@@ -240,50 +271,63 @@ function bindAddressSearch() {
         state.map.setView([lat, lon], MAP_CONFIG.DEFAULT_ZOOM);
         performSearch(lat, lon);
       } else {
-        showToast(t('nd'), 'info');
+        showToast(t("nd"), "info");
       }
     } catch (err) {
-      showToast(t('error', { msg: err.message }), 'error');
+      showToast(t("error", { msg: err.message }), "error");
     }
   };
 
-  searchBtn.addEventListener('click', doSearch);
-  addressInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
+  searchBtn.addEventListener("click", doSearch);
+  addressInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") doSearch();
+  });
 }
 
 async function showSuggestions(input, box) {
   const query = input.value.trim();
-  if (query.length < SEARCH_CONFIG.MIN_ADDRESS_LENGTH) { box.classList.add('hidden'); return; }
+  if (query.length < SEARCH_CONFIG.MIN_ADDRESS_LENGTH) {
+    box.classList.add("hidden");
+    return;
+  }
   try {
     const results = await geocodeAddress(query, state.lang);
     if (results?.length > 0) {
-      box.innerHTML = results.map(res =>
-        `<div class="suggestion-item" data-lat="${res.lat}" data-lon="${res.lon}">
+      box.innerHTML = results
+        .map(
+          (res) =>
+            `<div class="suggestion-item" data-lat="${res.lat}" data-lon="${res.lon}">
           ${res.display_name}
-        </div>`
-      ).join('');
-      box.classList.remove('hidden');
+        </div>`,
+        )
+        .join("");
+      box.classList.remove("hidden");
     } else {
-      box.classList.add('hidden');
+      box.classList.add("hidden");
     }
   } catch {
-    box.classList.add('hidden');
+    box.classList.add("hidden");
   }
 }
 
 let firstSearchDone = false;
 
 export async function performSearch(lat, lng) {
-  elements.searchHereBtn.classList.add('hidden');
+  elements.searchHereBtn.classList.add("hidden");
   try {
     closePanel();
-    const data = await searchStations(lat, lng, state.radius, state.selectedFuelId);
+    const data = await searchStations(
+      lat,
+      lng,
+      state.radius,
+      state.selectedFuelId,
+    );
     state.stationsById.clear();
-    for (const s of (data.results || [])) {
+    for (const s of data.results || []) {
       state.stationsById.set(String(s.id), s);
     }
     state.lastSearchCenter = L.latLng(lat, lng);
-    state.lastSearchZoom   = state.map?.getZoom() ?? null;
+    state.lastSearchZoom = state.map?.getZoom() ?? null;
     syncMarkers();
 
     // The tutorial highlights real UI — in particular `.price-marker`, which
@@ -294,27 +338,33 @@ export async function performSearch(lat, lng) {
       checkTutorial();
     }
   } catch (err) {
-    if (err.name !== 'AbortError') showToast(t('error', { msg: err.message }), 'error');
+    if (err.name !== "AbortError")
+      showToast(t("error", { msg: err.message }), "error");
   }
 }
 
 function showPanelLoading() {
-  elements.panel.classList.remove('hidden');
-  if (window.innerWidth <= BREAKPOINTS.DESKTOP) elements.panel.classList.add('peek');
+  elements.panel.classList.remove("hidden");
+  if (window.innerWidth <= BREAKPOINTS.DESKTOP)
+    elements.panel.classList.add("peek");
   elements.panelContent.innerHTML = `
     <div class="panel-loading">
       <div class="spinner"></div>
-      <p>${t('loading_details')}</p>
+      <p>${t("loading_details")}</p>
     </div>`;
 }
 
 function showPanelError(message) {
-  elements.panelContent.innerHTML =
-    `<div class="panel-loading"><p>${t('error', { msg: message })}</p></div>`;
+  elements.panelContent.innerHTML = `<div class="panel-loading"><p>${t("error", { msg: message })}</p></div>`;
 }
 
 function resolveStationLocation(station, knownLocation) {
-  return station.location ?? knownLocation ?? state.stationsById.get(String(station.id))?.location ?? null;
+  return (
+    station.location ??
+    knownLocation ??
+    state.stationsById.get(String(station.id))?.location ??
+    null
+  );
 }
 
 async function ensureStationVisible(station, forceSearch) {
@@ -342,10 +392,14 @@ function focusMapOnStation(station) {
   state.map.flyTo([lat, lng], zoom, { duration: MAP_CONFIG.FLY_DURATION_S });
 }
 
-export async function openStationById(id, knownLocation = null, forceSearch = false) {
+export async function openStationById(
+  id,
+  knownLocation = null,
+  forceSearch = false,
+) {
   const sId = String(id);
   selectMarker(sId);
-  
+
   // Close history panel to avoid overlap on both mobile and desktop
   closeHistoryPanelUI();
 
@@ -362,7 +416,7 @@ export async function openStationById(id, knownLocation = null, forceSearch = fa
     focusMapOnStation(station);
     renderPanel(station);
   } catch (err) {
-    if (err.name === 'AbortError') return;
+    if (err.name === "AbortError") return;
     showPanelError(err.message);
   }
 }

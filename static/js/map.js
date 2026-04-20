@@ -1,5 +1,5 @@
-import { state, updateURL } from './state.js';
-import { priceColor } from './formatters.js';
+import { state, updateURL } from "./state.js";
+import { priceColor } from "./formatters.js";
 
 let moveTimeout;
 let markerClickHandler = null;
@@ -10,13 +10,17 @@ const MARKER_BOUNDS_PADDING = 0.2;
 const METERS_PER_DEGREE_LAT = 111_320;
 
 function showSearchHereButton() {
-  document.getElementById('searchHereBtn')?.classList.remove('hidden');
+  document.getElementById("searchHereBtn")?.classList.remove("hidden");
 }
 
 function getViewWidthMeters(center) {
   const bounds = state.map.getBounds();
   const widthDegrees = Math.abs(bounds.getEast() - bounds.getWest());
-  return widthDegrees * METERS_PER_DEGREE_LAT * Math.cos(center.lat * Math.PI / 180);
+  return (
+    widthDegrees *
+    METERS_PER_DEGREE_LAT *
+    Math.cos((center.lat * Math.PI) / 180)
+  );
 }
 
 function isSearchShiftSignificant(center, zoom) {
@@ -42,28 +46,33 @@ function onMapMoveEnd() {
   }, MOVE_END_DEBOUNCE_MS);
 }
 
-export function initMap(onSearch, onMarkerClick, center = [41.9028, 12.4964], zoom = 13) {
+export function initMap(
+  onSearch,
+  onMarkerClick,
+  center = [41.9028, 12.4964],
+  zoom = 13,
+) {
   markerClickHandler = onMarkerClick;
 
-  state.map = L.map('map', {
+  state.map = L.map("map", {
     center,
     zoom,
     zoomControl: true,
   });
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap contributors",
     maxZoom: 19,
-    referrerPolicy: 'strict-origin-when-cross-origin',
+    referrerPolicy: "strict-origin-when-cross-origin",
   }).addTo(state.map);
 
-  state.map.on('click', (e) => {
+  state.map.on("click", (e) => {
     onSearch(e.latlng.lat, e.latlng.lng);
   });
 
-  state.map.on('moveend', onMapMoveEnd);
+  state.map.on("moveend", onMapMoveEnd);
 
-  state.map.on('dblclick', (e) => {
+  state.map.on("dblclick", (e) => {
     e.originalEvent.preventDefault();
   });
 }
@@ -78,7 +87,10 @@ function collectRenderableStations() {
     const id = String(station.id);
     const isSelected = id === state.selectedStationId;
 
-    if (!isSelected && !bounds.contains([station.location.lat, station.location.lng])) {
+    if (
+      !isSelected &&
+      !bounds.contains([station.location.lat, station.location.lng])
+    ) {
       continue;
     }
 
@@ -111,7 +123,7 @@ function computePriceRange(items) {
 
 function createMarkerEntry(item, color, priceText) {
   const icon = L.divIcon({
-    className: '',
+    className: "",
     html: `
       <div class="price-marker" style="--marker-color:${color}" data-id="${item.id}">
         <span class="marker-price">${priceText}</span>
@@ -124,10 +136,10 @@ function createMarkerEntry(item, color, priceText) {
   const marker = L.marker([item.lat, item.lng], { icon }).addTo(state.map);
 
   const root = marker.getElement();
-  const el = root?.querySelector('.price-marker') ?? null;
-  const priceEl = el?.querySelector('.marker-price') ?? null;
+  const el = root?.querySelector(".price-marker") ?? null;
+  const priceEl = el?.querySelector(".marker-price") ?? null;
 
-  marker.on('click', () => {
+  marker.on("click", () => {
     markerClickHandler?.(item.id);
   });
 
@@ -139,7 +151,7 @@ function updateMarkerEntry(entry, color, priceText) {
     return;
   }
 
-  entry.el?.style.setProperty('--marker-color', color);
+  entry.el?.style.setProperty("--marker-color", color);
   if (entry.priceEl) {
     entry.priceEl.textContent = priceText;
   }
@@ -195,20 +207,20 @@ export function selectMarker(id) {
 
   if (state.selectedStationId && state.markers.has(state.selectedStationId)) {
     const prevEntry = state.markers.get(state.selectedStationId);
-    prevEntry.el?.classList.remove('selected');
+    prevEntry.el?.classList.remove("selected");
     prevEntry.marker.setZIndexOffset(0);
   }
 
   state.selectedStationId = sId;
-  const mapEl = document.getElementById('map');
+  const mapEl = document.getElementById("map");
 
   if (sId && state.markers.has(sId)) {
     const targetEntry = state.markers.get(sId);
     targetEntry.marker.setZIndexOffset(1000);
-    targetEntry.el?.classList.add('selected');
-    mapEl?.classList.add('has-selection');
+    targetEntry.el?.classList.add("selected");
+    mapEl?.classList.add("has-selection");
   } else {
-    mapEl?.classList.remove('has-selection');
+    mapEl?.classList.remove("has-selection");
   }
 }
 
@@ -219,15 +231,15 @@ export function setUserLocationMarker(lat, lng) {
     state.userLocationMarker.setLatLng([lat, lng]);
   } else {
     const icon = L.divIcon({
-      className: 'user-location-marker',
+      className: "user-location-marker",
       html: '<div class="user-location-dot"></div>',
       iconSize: [20, 20],
       iconAnchor: [10, 10],
     });
-    state.userLocationMarker = L.marker([lat, lng], { 
+    state.userLocationMarker = L.marker([lat, lng], {
       icon,
       zIndexOffset: 2000, // Always on top
-      interactive: false 
+      interactive: false,
     }).addTo(state.map);
   }
 }

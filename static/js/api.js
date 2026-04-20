@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state } from "./state.js";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const SEARCH_CACHE_SIZE = 20;
@@ -60,17 +60,17 @@ function getQuantizedKey(lat, lng, radius, fuelId) {
 
 export async function fetchFuels() {
   try {
-    const res = await fetch('/api/fuels');
+    const res = await fetch("/api/fuels");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('fetchFuels error:', err);
+    console.error("fetchFuels error:", err);
     return [
-      { id: 1, name: 'Benzina' },
-      { id: 2, name: 'Gasolio' },
-      { id: 3, name: 'HVO' },
-      { id: 4, name: 'GPL' },
-      { id: 5, name: 'Metano' },
+      { id: 1, name: "Benzina" },
+      { id: 2, name: "Gasolio" },
+      { id: 3, name: "HVO" },
+      { id: 4, name: "GPL" },
+      { id: 5, name: "Metano" },
     ];
   }
 }
@@ -88,7 +88,7 @@ export function searchStations(lat, lng, radius, fuelId) {
 
   const promise = fetch(
     `/api/search?lat=${lat}&lng=${lng}&radius=${radius}&fuel=${fuelId}`,
-    { signal: state.requests.searchAbortController.signal }
+    { signal: state.requests.searchAbortController.signal },
   )
     .then((res) => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -142,7 +142,7 @@ export function fetchStationDetails(id) {
 export async function geocodeAddress(query, lang) {
   const url = `/api/geocode?q=${encodeURIComponent(query)}`;
   const res = await fetch(url, {
-    headers: { 'Accept-Language': lang },
+    headers: { "Accept-Language": lang },
   });
 
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

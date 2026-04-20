@@ -30,8 +30,8 @@ func fakeStaticFS() fstest.MapFS {
 		0x42, 0x60, 0x82,
 	}
 	return fstest.MapFS{
-		"static/hello.txt": {Data: []byte(strings.Repeat("hello world ", 50))},
-		"static/pixel.png": {Data: png},
+		"static/hello.txt":  {Data: []byte(strings.Repeat("hello world ", 50))},
+		"static/pixel.png":  {Data: png},
 		"static/index.html": {Data: []byte("<!doctype html><div id=\"app\"></div>")},
 	}
 }

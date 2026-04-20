@@ -7,8 +7,8 @@ import (
 )
 
 type AppError struct {
-	Status  int    `json:"-"`
-	Message string `json:"error"`
+	Status   int    `json:"-"`
+	Message  string `json:"error"`
 	Internal error  `json:"-"`
 }
 

@@ -46,11 +46,13 @@ ohmypieno/
 - `docker compose up --build`
 
 Environment:
+
 - `PORT` (default 8080)
 - `OHMYPIENO_API_URL` (default `https://carburanti.mise.gov.it/ospzApi`)
 - `TRUST_PROXY_HEADERS=true` — only when behind a trusted reverse proxy. Controls whether the rate limiter honors `X-Forwarded-For` / `X-Real-IP`.
 
 External dependencies (intentionally minimal):
+
 - `golang.org/x/sync/singleflight` — request coalescing.
 - `golang.org/x/time/rate` — rate limiter.
 
@@ -61,6 +63,7 @@ Logging → SecurityHeaders → Gzip → RateLimit → CacheControl → mux
 ```
 
 Order matters:
+
 - SecurityHeaders sits outside Gzip so 429s and errors still carry headers.
 - RateLimit only gates `/api/*`; static assets pass through unthrottled.
 - Gzip skips pre-encoded responses (checked inside the wrapper at first write,
@@ -151,7 +154,7 @@ Order matters:
 - Each `internal/*` package has its own test file(s).
 - Integration tests live in `internal/app/integration_test.go` and exercise
   the full middleware chain.
-- Regression tests carry inline comments explaining *which bug* they catch.
+- Regression tests carry inline comments explaining _which bug_ they catch.
   Preserve those comments — they outlive the incident.
 - Concurrency tests use the race detector and should run 30+ iterations
   cleanly.
@@ -183,6 +186,7 @@ Order matters:
 ## Roadmap snapshot (2026-04-18)
 
 Recently completed:
+
 - Backend: bounded cache, rate limiter, security headers, gzip refactor
   (pool + MIME skip + Content-Length), long cache on `/api/fuels`, interface
   cleanup, fuel deep-copy optimization, `fs.FS` signature.
@@ -192,6 +196,7 @@ Recently completed:
   keys centralized.
 
 Open items:
+
 - **Tier 3 tutorial polish, narrowed**. Two original items (spotlight
   backdrop, modal positioned relative to highlight) were built and reverted
   — see below. What's still safe to do:
@@ -223,5 +228,5 @@ proposing any tutorial visual change:
    Flex-centered, always.
 3. **Highlights communicate targets, alone.** The existing
    `.tutorial-highlight` pattern (accent `box-shadow` glow + `z-index: 4000`
-   + `pointer-events: none`) is the only visual mechanism for "look at
-   this element." Any enhancement should work *with* this, not around it.
+   - `pointer-events: none`) is the only visual mechanism for "look at
+     this element." Any enhancement should work _with_ this, not around it.
