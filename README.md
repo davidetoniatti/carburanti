@@ -1,4 +1,4 @@
-# <samp>OHMY<em style="color: #bb9af7; font-style: normal;">PIENO</em></samp>
+![sample svg](logo.svg)
 
 Go web application that shows an interactive map of fuel prices in Italy, using real-time data from the official **MIMIT** (ex MISE) portal.
 
@@ -48,11 +48,13 @@ docker-compose up -d
 ### Using Docker directly
 
 1. Build the image:
+
 ```bash
 docker build -t ohmypieno .
 ```
 
 2. Run the container:
+
 ```bash
 docker run -p 8080:8080 ohmypieno
 ```
@@ -61,9 +63,9 @@ docker run -p 8080:8080 ohmypieno
 
 The application can be configured using environment variables:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | HTTP server port | `8080` |
+| Variable            | Description               | Default                                  |
+| ------------------- | ------------------------- | ---------------------------------------- |
+| `PORT`              | HTTP server port          | `8080`                                   |
 | `OHMYPIENO_API_URL` | Base URL for the MISE API | `https://carburanti.mise.gov.it/ospzApi` |
 
 ## Project Structure
