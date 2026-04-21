@@ -479,11 +479,14 @@ export async function openStationById(
   try {
     const station = await fetchStationDetails(sId);
     station.location = resolveStationLocation(station, knownLocation);
-    state.currentStationData = station;
 
     addToHistory(station);
     await ensureStationVisible(station, forceSearch);
 
+    // Assign after ensureStationVisible: a background performSearch inside it
+    // calls closePanel, which nulls currentStationData. Setting it here keeps
+    // i18n live-refresh of the open panel working.
+    state.currentStationData = station;
     focusMapOnStation(station);
     renderPanel(station);
   } catch (err) {

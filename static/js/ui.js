@@ -161,6 +161,15 @@ function renderContactRow(labelKey, value, hrefPrefix = "") {
 }
 
 export function renderPanel(station) {
+  // A zone-switch triggered by openStationById runs performSearch, which
+  // hides the panel as a side-effect. Re-open it here so rendering a station
+  // always results in a visible panel.
+  const wasHidden = elements.panel.classList.contains("hidden");
+  elements.panel.classList.remove("hidden");
+  if (wasHidden && window.innerWidth <= BREAKPOINTS.DESKTOP) {
+    elements.panel.classList.add("peek");
+  }
+
   const fuelMap = new Map();
   let latestDate = null;
 
