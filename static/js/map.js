@@ -77,12 +77,28 @@ export function initMap(
   });
 }
 
+// Brand filtering is client-side only, unlike the fuel filter (which runs on
+// the server because it drives selectedPrice enrichment per invariant #4).
+// Brand data is already on every station response, so filtering here just
+// hides markers — no extra network round-trip, no new cache key dimension.
+function matchesBrandFilter(station) {
+  const selected = state.selectedBrand;
+  if (!selected) return true;
+
+  const brand = (station.brand || "").trim();
+  if (selected === "Pompe Bianche") {
+    return !brand || brand === "Pompe Bianche" || !state.topBrands.has(brand);
+  }
+  return brand === selected;
+}
+
 function collectRenderableStations() {
   const bounds = state.map.getBounds().pad(MARKER_BOUNDS_PADDING);
   const items = [];
 
   for (const station of state.stationsById.values()) {
     if (!station.location || station.selectedPrice == null) continue;
+    if (!matchesBrandFilter(station)) continue;
 
     const id = String(station.id);
     const isSelected = id === state.selectedStationId;
