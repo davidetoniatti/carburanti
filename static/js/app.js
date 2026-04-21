@@ -150,7 +150,7 @@ function toggleTheme() {
   setTheme(modes[nextIndex]);
 }
 
-function refreshBrandOptions() {
+export function refreshBrandOptions() {
   const counts = new Map();
   let bucketCount = 0;
 
@@ -173,6 +173,19 @@ function refreshBrandOptions() {
 
   const displayNames = topEntries.map(([name]) => name);
   if (bucketCount > 0) displayNames.push(BRAND_CONFIG.BUCKET);
+
+  // The selected brand may be a tail brand (present in the zone but outside
+  // top N) or absent from the zone entirely. Either way, ensure it stays
+  // visible in the dropdown so the user can see what they've filtered on.
+  const selected = state.selectedBrand;
+  const selectionInZone =
+    selected &&
+    (counts.has(selected) ||
+      (selected === BRAND_CONFIG.BUCKET && bucketCount > 0));
+  if (selected && !displayNames.includes(selected)) {
+    displayNames.push(selected);
+  }
+
   displayNames.sort((a, b) => a.localeCompare(b));
 
   const select = elements.brandSelect;
@@ -187,13 +200,16 @@ function refreshBrandOptions() {
   for (const name of displayNames) {
     const opt = document.createElement("option");
     opt.value = name;
-    opt.textContent = name;
+    if (name === selected && !selectionInZone) {
+      opt.textContent = `${name} (${t("brand_not_in_area")})`;
+      opt.disabled = true;
+    } else {
+      opt.textContent = name;
+    }
     select.appendChild(opt);
   }
 
-  const valid =
-    state.selectedBrand && displayNames.includes(state.selectedBrand);
-  select.value = valid ? state.selectedBrand : "";
+  select.value = selected ?? "";
 }
 
 function bindBrandSelect() {
@@ -389,9 +405,6 @@ export async function performSearch(lat, lng) {
     refreshBrandOptions();
     syncMarkers();
 
-    // The tutorial highlights real UI — in particular `.price-marker`, which
-    // only exists after markers have been rendered. Defer the first-visit
-    // trigger until we have something to point at.
     if (!firstSearchDone) {
       firstSearchDone = true;
       checkTutorial();
@@ -459,7 +472,6 @@ export async function openStationById(
   const sId = String(id);
   selectMarker(sId);
 
-  // Close history panel to avoid overlap on both mobile and desktop
   closeHistoryPanelUI();
 
   showPanelLoading();

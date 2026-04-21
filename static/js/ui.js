@@ -1,7 +1,7 @@
 import { state } from "./state.js";
 import { t } from "./i18n.js";
 import { escapeHtml, timeAgo, getDistance } from "./formatters.js";
-import { openStationById, closePanel } from "./app.js";
+import { openStationById, closePanel, refreshBrandOptions } from "./app.js";
 import { refreshTutorialIfActive } from "./tutorial.js";
 import { refreshHelpModalIfActive } from "./keyboard.js";
 import { BREAKPOINTS, TIMEOUTS } from "./constants.js";
@@ -31,6 +31,7 @@ export function updateUILanguage() {
 
   refreshTutorialIfActive();
   refreshHelpModalIfActive();
+  refreshBrandOptions();
 }
 
 export function showToast(msg, type = "info") {

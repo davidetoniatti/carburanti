@@ -78,10 +78,9 @@ export function initMap(
   });
 }
 
-// Brand filtering is client-side only, unlike the fuel filter (which runs on
-// the server because it drives selectedPrice enrichment per invariant #4).
+// Brand filtering is client-side only.
 // Brand data is already on every station response, so filtering here just
-// hides markers — no extra network round-trip, no new cache key dimension.
+// hides markers.
 function matchesBrandFilter(station) {
   const selected = state.selectedBrand;
   if (!selected) return true;
