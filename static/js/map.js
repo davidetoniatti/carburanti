@@ -1,5 +1,6 @@
 import { state, updateURL } from "./state.js";
 import { priceColor } from "./formatters.js";
+import { BRAND_CONFIG } from "./constants.js";
 
 let moveTimeout;
 let markerClickHandler = null;
@@ -86,8 +87,10 @@ function matchesBrandFilter(station) {
   if (!selected) return true;
 
   const brand = (station.brand || "").trim();
-  if (selected === "Pompe Bianche") {
-    return !brand || brand === "Pompe Bianche" || !state.topBrands.has(brand);
+  if (selected === BRAND_CONFIG.BUCKET) {
+    return (
+      !brand || brand === BRAND_CONFIG.BUCKET || !state.topBrands.has(brand)
+    );
   }
   return brand === selected;
 }

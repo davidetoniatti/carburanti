@@ -30,6 +30,7 @@ import {
   MAP_CONFIG,
   SEARCH_CONFIG,
   STORAGE_KEYS,
+  BRAND_CONFIG,
 } from "./constants.js";
 import { elements } from "./dom.js";
 
@@ -149,16 +150,13 @@ function toggleTheme() {
   setTheme(modes[nextIndex]);
 }
 
-const BUCKET_BRAND = "Pompe Bianche";
-const TOP_N_BRANDS = 10;
-
 function refreshBrandOptions() {
   const counts = new Map();
   let bucketCount = 0;
 
   for (const station of state.stationsById.values()) {
     const brand = (station.brand || "").trim();
-    if (!brand || brand === BUCKET_BRAND) {
+    if (!brand || brand === BRAND_CONFIG.BUCKET) {
       bucketCount++;
       continue;
     }
@@ -168,13 +166,13 @@ function refreshBrandOptions() {
   const sorted = [...counts.entries()].sort(
     (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
   );
-  const topEntries = sorted.slice(0, TOP_N_BRANDS);
-  for (const [, n] of sorted.slice(TOP_N_BRANDS)) bucketCount += n;
+  const topEntries = sorted.slice(0, BRAND_CONFIG.TOP_N);
+  for (const [, n] of sorted.slice(BRAND_CONFIG.TOP_N)) bucketCount += n;
 
   state.topBrands = new Set(topEntries.map(([name]) => name));
 
   const displayNames = topEntries.map(([name]) => name);
-  if (bucketCount > 0) displayNames.push(BUCKET_BRAND);
+  if (bucketCount > 0) displayNames.push(BRAND_CONFIG.BUCKET);
   displayNames.sort((a, b) => a.localeCompare(b));
 
   const select = elements.brandSelect;

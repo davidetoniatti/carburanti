@@ -29,6 +29,14 @@ export const HISTORY_CONFIG = {
   MAX_SIZE: 10,
 };
 
+// MIMIT returns brand names glued (no spaces): e.g. "PompeBianche", "AgipEni".
+// BUCKET is the literal label that also doubles as the catch-all for the
+// long tail beyond TOP_N most common brands in the current zone.
+export const BRAND_CONFIG = {
+  BUCKET: "PompeBianche",
+  TOP_N: 10,
+};
+
 export const SHEET_CONFIG = {
   DRAG_THRESHOLD: 50,
   VELOCITY_THRESHOLD: 0.5,
