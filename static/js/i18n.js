@@ -4,6 +4,8 @@ export const translations = {
   en: {
     title: "OhMyPieno",
     fuel_label: "FUEL TYPE",
+    brand_all: "All brands",
+    brand_not_in_area: "not in this area",
     loading: "Loading...",
     radius_label: "RADIUS (km)",
     locate_btn: "Locate me",
@@ -79,6 +81,8 @@ export const translations = {
   it: {
     title: "OhMyPieno",
     fuel_label: "CARBURANTE",
+    brand_all: "Tutte le bandiere",
+    brand_not_in_area: "non in questa zona",
     loading: "Caricamento...",
     radius_label: "RAGGIO (km)",
     locate_btn: "Localizzami",

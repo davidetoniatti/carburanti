@@ -94,6 +94,8 @@ async function bootstrapApp() {
   initMap(performSearch, openStationById, [startLat, startLng], startZoom);
 
   await loadFuels(urlState.fuel);
+  if (urlState.brand) state.selectedBrand = urlState.brand;
+  bindBrandSelect();
   bindControls();
   bindHistoryEvents(openStationById);
   bindKeyboardShortcuts();
@@ -145,6 +147,64 @@ function toggleTheme() {
   const currentIndex = modes.indexOf(state.theme);
   const nextIndex = (currentIndex + 1) % modes.length;
   setTheme(modes[nextIndex]);
+}
+
+const BUCKET_BRAND = "Pompe Bianche";
+const TOP_N_BRANDS = 10;
+
+function refreshBrandOptions() {
+  const counts = new Map();
+  let bucketCount = 0;
+
+  for (const station of state.stationsById.values()) {
+    const brand = (station.brand || "").trim();
+    if (!brand || brand === BUCKET_BRAND) {
+      bucketCount++;
+      continue;
+    }
+    counts.set(brand, (counts.get(brand) ?? 0) + 1);
+  }
+
+  const sorted = [...counts.entries()].sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+  );
+  const topEntries = sorted.slice(0, TOP_N_BRANDS);
+  for (const [, n] of sorted.slice(TOP_N_BRANDS)) bucketCount += n;
+
+  state.topBrands = new Set(topEntries.map(([name]) => name));
+
+  const displayNames = topEntries.map(([name]) => name);
+  if (bucketCount > 0) displayNames.push(BUCKET_BRAND);
+  displayNames.sort((a, b) => a.localeCompare(b));
+
+  const select = elements.brandSelect;
+  select.innerHTML = "";
+
+  const allOpt = document.createElement("option");
+  allOpt.value = "";
+  allOpt.textContent = t("brand_all");
+  allOpt.setAttribute("data-i18n", "brand_all");
+  select.appendChild(allOpt);
+
+  for (const name of displayNames) {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  }
+
+  const valid =
+    state.selectedBrand && displayNames.includes(state.selectedBrand);
+  select.value = valid ? state.selectedBrand : "";
+}
+
+function bindBrandSelect() {
+  elements.brandSelect.addEventListener("change", () => {
+    const v = elements.brandSelect.value;
+    state.selectedBrand = v === "" ? null : v;
+    syncMarkers();
+    updateURL();
+  });
 }
 
 async function loadFuels(defaultFuelId) {
@@ -328,6 +388,7 @@ export async function performSearch(lat, lng) {
     }
     state.lastSearchCenter = L.latLng(lat, lng);
     state.lastSearchZoom = state.map?.getZoom() ?? null;
+    refreshBrandOptions();
     syncMarkers();
 
     // The tutorial highlights real UI — in particular `.price-marker`, which
