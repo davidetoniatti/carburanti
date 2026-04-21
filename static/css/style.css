@@ -673,8 +673,7 @@ select:hover {
   text-decoration: none;
 }
 
-/* -- LEGEND -- */
-#legend {
+#help-indicator {
   position: absolute;
   bottom: 24px;
   left: 24px;
@@ -686,30 +685,20 @@ select:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(8px);
 }
-.legend-title {
+.helpindicator-title {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.1em;
-  color: var(--text-muted);
-  margin-bottom: 8px;
+  color: var(--text);
   text-align: center;
 }
-.legend-scale {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.legend-label {
+#help-indicator kbd {
   font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-.legend-gradient {
-  width: 120px;
-  height: 8px;
+  padding: 1px 6px;
   border-radius: 4px;
-  background: linear-gradient(to right, #3ecf8e, #f5a623, #e8431a);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--accent);
 }
 
 /* -- TUTORIAL MODAL -- */
@@ -1266,7 +1255,7 @@ select:hover {
     touch-action: pan-y;
   }
 
-  #legend {
+  #help-indicator {
     display: none;
   }
 

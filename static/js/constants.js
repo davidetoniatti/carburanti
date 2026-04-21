@@ -84,7 +84,7 @@ export const TUTORIAL_STEPS = [
   {
     textKey: "tutorial_step4",
     highlight: "#filterToggle",
-    highlightDesktop: "#fuelSelect, #radiusSelect",
+    highlightDesktop: "#fuelSelect, #radiusSelect, #brandSelect",
     icon: ICON_FILTER,
   },
   {

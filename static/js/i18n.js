@@ -16,9 +16,8 @@ export const translations = {
     status_initial:
       "Click on the map or use localization to search for stations",
     loading_details: "Loading details...",
-    price_legend: "PRICE EUR/L",
-    price_low: "low",
-    price_high: "high",
+    press: "PRESS",
+    for_help: "FOR HELP",
     geo_not_supported: "Geolocation not supported",
     detecting_pos: "Detecting position...",
     pos_error: "Unable to detect position",
@@ -59,7 +58,7 @@ export const translations = {
       "Use the map and click any station marker to view fuel prices and other details.",
     tutorial_step3:
       "Use the search bar to find stations in a specific city or near an address.",
-    tutorial_step4: "Choose your fuel type and search radius.",
+    tutorial_step4: "Filter by fuel type, brand name and search radius.",
     tutorial_step5:
       "Click the history button to view your recently viewed stations.",
     tutorial_step6:
@@ -93,9 +92,8 @@ export const translations = {
     status_initial:
       "Clicca sulla mappa o usa la localizzazione per cercare stazioni",
     loading_details: "Caricamento dettagli...",
-    price_legend: "PREZZO EUR/L",
-    price_low: "basso",
-    price_high: "alto",
+    press: "PREMI",
+    for_help: "PER AIUTO",
     geo_not_supported: "Geolocalizzazione non supportata",
     detecting_pos: "Rilevamento posizione...",
     pos_error: "Impossibile rilevare la posizione",
@@ -136,7 +134,7 @@ export const translations = {
       "Usa la mappa e tocca un indicatore di stazione per visualizzare i prezzi del carburante e altri dettagli.",
     tutorial_step3:
       "Usa la barra di ricerca per trovare le stazioni in una città specifica o vicino a un indirizzo.",
-    tutorial_step4: "Scegli il tipo di carburante e il raggio di ricerca.",
+    tutorial_step4: "Filtra per tipo di carburante, brand e raggio di ricerca.",
     tutorial_step5:
       "Tocca il pulsante della cronologia per visualizzare le stazioni visualizzate di recente.",
     tutorial_step6:
