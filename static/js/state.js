@@ -6,6 +6,8 @@ export const state = {
   stationsById: new Map(),
   fuels: [],
   selectedFuelId: null,
+  selectedBrand: null,
+  topBrands: new Set(),
   radius: SEARCH_CONFIG.DEFAULT_RADIUS,
   selectedStationId: null,
   lang: "en",
@@ -50,6 +52,7 @@ export function getStateFromURL() {
     zoom: parseInt(params.get("zoom"), 10),
     fuel: parseInt(params.get("fuel"), 10),
     radius: parseInt(params.get("radius"), 10),
+    brand: params.get("brand"),
   };
 }
 
@@ -65,6 +68,10 @@ export function updateURL() {
 
   if (state.selectedFuelId) {
     params.set("fuel", state.selectedFuelId);
+  }
+
+  if (state.selectedBrand) {
+    params.set("brand", state.selectedBrand);
   }
 
   params.set("radius", state.radius);
