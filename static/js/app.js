@@ -444,6 +444,10 @@ async function ensureStationVisible(station, forceSearch) {
   if (!station.location) return;
 
   if (forceSearch || !state.markers.has(sId)) {
+    const zoom = Math.max(state.map.getZoom(), MAP_CONFIG.DEFAULT_ZOOM);
+    state.map.setView([station.location.lat, station.location.lng], zoom, {
+      animate: false,
+    });
     await performSearch(station.location.lat, station.location.lng);
     selectMarker(sId);
   }
@@ -483,9 +487,6 @@ export async function openStationById(
     addToHistory(station);
     await ensureStationVisible(station, forceSearch);
 
-    // Assign after ensureStationVisible: a background performSearch inside it
-    // calls closePanel, which nulls currentStationData. Setting it here keeps
-    // i18n live-refresh of the open panel working.
     state.currentStationData = station;
     focusMapOnStation(station);
     renderPanel(station);
