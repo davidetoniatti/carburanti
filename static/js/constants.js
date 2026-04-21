@@ -29,6 +29,17 @@ export const HISTORY_CONFIG = {
   MAX_SIZE: 10,
 };
 
+// The /api/fuels endpoint returns this exact list (hardcoded server-side per
+// invariant #8). Mirroring it here avoids a network round-trip on every page
+// load. Keep in sync with internal/api/client.go:GetFuels.
+export const FUELS = [
+  { id: 1, name: "Benzina" },
+  { id: 2, name: "Gasolio" },
+  { id: 3, name: "HVO" },
+  { id: 4, name: "GPL" },
+  { id: 5, name: "Metano" },
+];
+
 // MIMIT returns brand names glued (no spaces): e.g. "PompeBianche", "AgipEni".
 // BUCKET is the literal label that also doubles as the catch-all for the
 // long tail beyond TOP_N most common brands in the current zone.

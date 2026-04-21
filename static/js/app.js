@@ -1,7 +1,6 @@
 import { state, getStateFromURL, updateURL, addToHistory } from "./state.js";
 import { hasLocale, t } from "./i18n.js";
 import {
-  fetchFuels,
   searchStations,
   geocodeAddress,
   fetchStationDetails,
@@ -31,6 +30,7 @@ import {
   SEARCH_CONFIG,
   STORAGE_KEYS,
   BRAND_CONFIG,
+  FUELS,
 } from "./constants.js";
 import { elements } from "./dom.js";
 
@@ -97,7 +97,7 @@ async function bootstrapApp() {
 
   initMap(performSearch, openStationById, [startLat, startLng], startZoom);
 
-  await loadFuels(urlState.fuel);
+  loadFuels(urlState.fuel);
   if (urlState.brand) state.selectedBrand = urlState.brand;
   bindBrandSelect();
   bindControls();
@@ -224,8 +224,8 @@ function bindBrandSelect() {
   });
 }
 
-async function loadFuels(defaultFuelId) {
-  state.fuels = await fetchFuels();
+function loadFuels(defaultFuelId) {
+  state.fuels = FUELS;
   elements.fuelSelect.innerHTML = state.fuels
     .map((f) => `<option value="${f.id}">${f.name}</option>`)
     .join("");

@@ -58,23 +58,6 @@ function getQuantizedKey(lat, lng, radius, fuelId) {
   return `search:${qLat}:${qLng}:${radius}:${fuelId}`;
 }
 
-export async function fetchFuels() {
-  try {
-    const res = await fetch("/api/fuels");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.error("fetchFuels error:", err);
-    return [
-      { id: 1, name: "Benzina" },
-      { id: 2, name: "Gasolio" },
-      { id: 3, name: "HVO" },
-      { id: 4, name: "GPL" },
-      { id: 5, name: "Metano" },
-    ];
-  }
-}
-
 export function searchStations(lat, lng, radius, fuelId) {
   const cacheKey = getQuantizedKey(lat, lng, radius, fuelId);
   const cached = searchCache.get(cacheKey);
