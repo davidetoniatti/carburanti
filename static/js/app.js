@@ -83,7 +83,10 @@ async function bootstrapApp() {
   updateUILanguage();
 
   const urlState = getStateFromURL();
-  if (urlState.radius) {
+  const validRadii = [...elements.radiusSelect.options].map((o) =>
+    parseInt(o.value, 10),
+  );
+  if (urlState.radius && validRadii.includes(urlState.radius)) {
     state.radius = urlState.radius;
     elements.radiusSelect.value = state.radius;
   }
