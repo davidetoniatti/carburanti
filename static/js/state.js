@@ -29,12 +29,19 @@ export function addToHistory(station) {
   const stationId = String(station.id);
   const previous = state.history.find((item) => String(item.id) === stationId);
 
+  let latestDate = previous?.latestDate || null;
+  for (const f of station.fuels || []) {
+    if (f.insertDate && (!latestDate || f.insertDate > latestDate)) {
+      latestDate = f.insertDate;
+    }
+  }
+
   const nextEntry = {
     id: stationId,
-    name: station.name || previous?.name,
     brand: station.brand || previous?.brand,
     address: station.address || previous?.address,
     location: station.location || previous?.location,
+    latestDate,
     timestamp: Date.now(),
   };
 

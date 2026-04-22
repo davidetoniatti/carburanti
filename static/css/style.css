@@ -336,20 +336,6 @@ body {
 .history-item:hover {
   border-color: var(--accent);
 }
-.history-item-name {
-  font-weight: 600;
-  font-size: 14px;
-}
-.history-item-brand {
-  font-size: 11px;
-  color: var(--accent);
-  font-family: var(--font-mono);
-}
-.history-item-address {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
 
 .search-wrap {
   display: flex;

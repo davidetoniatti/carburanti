@@ -86,6 +86,10 @@ export function closeHistoryPanelUI() {
 
 export function bindHistoryEvents(onHistoryClick) {
   elements.historyList.addEventListener("click", (e) => {
+    // Let the Open-in-Maps link handle its own click without reopening the
+    // station in the background.
+    if (e.target.closest(".station-map-link")) return;
+
     const item = e.target.closest(".history-item");
     if (!item) return;
 
@@ -104,15 +108,33 @@ export function renderHistory() {
   }
 
   elements.historyList.innerHTML = state.history
-    .map(
-      (entry) => `
+    .map((entry) => {
+      const mapsUrl = entry.location
+        ? `https://www.google.com/maps/search/?api=1&query=${entry.location.lat},${entry.location.lng}`
+        : "#";
+      const dist =
+        state.userLocation && entry.location
+          ? getDistance(
+              state.userLocation.lat,
+              state.userLocation.lng,
+              entry.location.lat,
+              entry.location.lng,
+            )
+          : null;
+      return `
     <li class="history-item" data-id="${entry.id}">
-      <div class="history-item-brand">${entry.brand ? escapeHtml(entry.brand) : t("nd")}</div>
-      <div class="history-item-name">${escapeHtml(entry.name || t("nd"))}</div>
-      <div class="history-item-address">${escapeHtml(entry.address || t("addr_not_available"))}</div>
+      <div class="station-brand">${escapeHtml(entry.brand || t("nd"))}</div>
+      <div class="station-address-container">
+        <div class="station-address">${escapeHtml(entry.address || t("addr_not_available"))}</div>
+        <a href="${mapsUrl}" target="_blank" rel="noopener" class="station-map-link">
+          ${t("open_in_map")}
+        </a>
+      </div>
+      ${entry.latestDate ? `<div class="station-update">${t("last_update", { time: timeAgo(entry.latestDate) })}</div>` : ""}
+      ${dist !== null ? `<div class="station-distance">${t("distance_from_pos", { d: dist.toFixed(1) })}</div>` : ""}
     </li>
-  `,
-    )
+  `;
+    })
     .join("");
 }
 
