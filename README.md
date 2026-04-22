@@ -1,4 +1,7 @@
-![sample svg](logo.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="logo-dark.svg">
+  <img src="logo-light.svg" alt="OhMyPieno">
+</picture>
 
 Go web application that shows an interactive map of fuel prices in Italy, using real-time data from the official **MIMIT** (ex MISE) portal.
 

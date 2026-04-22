@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 70" width="360" height="70" role="img" aria-label="OhMyPieno">
+  <style>
+    .t { font-family: "Space Mono", ui-monospace, "SF Mono", Consolas, "Liberation Mono", monospace; font-size: 40px; font-weight: 700; letter-spacing: 2px; }
+    .a { fill: #111827; }
+    .b { fill: #9854f1; }
+  </style>
+  <text x="8" y="50" class="t"><tspan class="a">OHMY</tspan><tspan class="b">PIENO</tspan></text>
+</svg>
