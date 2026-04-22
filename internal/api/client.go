@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"golang.org/x/sync/singleflight"
@@ -25,19 +26,21 @@ type StationProvider interface {
 type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
-	Cache      *cache.Cache[any]
+	Stations   *cache.Cache[*models.SearchResponse]
+	Details    *cache.Cache[*models.GasStation]
 	sfGroup    singleflight.Group
 }
 
 var _ StationProvider = (*Client)(nil)
 
-func NewClient(baseURL string, c *cache.Cache[any]) *Client {
+func NewClient(baseURL string, stations *cache.Cache[*models.SearchResponse], details *cache.Cache[*models.GasStation]) *Client {
 	return &Client{
 		BaseURL: baseURL,
 		HTTPClient: &http.Client{
 			Timeout: 15 * time.Second,
 		},
-		Cache: c,
+		Stations: stations,
+		Details:  details,
 	}
 }
 
@@ -77,11 +80,11 @@ func (c *Client) SearchZone(ctx context.Context, lat, lng float64, radius int) (
 	qLat := math.Round(lat*10000) / 10000
 	qLng := math.Round(lng*10000) / 10000
 
-	cacheKey := fmt.Sprintf("search:%f:%f:%d", qLat, qLng, radius)
+	cacheKey := fmt.Sprintf("%f:%f:%d", qLat, qLng, radius)
 
 	// Check cache
-	if val, found := c.Cache.Get(cacheKey); found {
-		return val.(*models.SearchResponse), nil
+	if val, found := c.Stations.Get(cacheKey); found {
+		return val, nil
 	}
 
 	// Coalesce identical requests
@@ -108,7 +111,7 @@ func (c *Client) SearchZone(ctx context.Context, lat, lng float64, radius int) (
 			return nil, err
 		}
 
-		c.Cache.Set(cacheKey, &searchRes, 5*time.Minute)
+		c.Stations.Set(cacheKey, &searchRes, 5*time.Minute)
 		return &searchRes, nil
 	})
 
@@ -124,9 +127,9 @@ func (c *Client) SearchZone(ctx context.Context, lat, lng float64, radius int) (
 }
 
 func (c *Client) GetServiceArea(ctx context.Context, id int) (*models.GasStation, error) {
-	cacheKey := fmt.Sprintf("station:%d", id)
-	if val, found := c.Cache.Get(cacheKey); found {
-		return val.(*models.GasStation), nil
+	cacheKey := strconv.Itoa(id)
+	if val, found := c.Details.Get(cacheKey); found {
+		return val, nil
 	}
 
 	// Coalesce station detail requests too
@@ -143,7 +146,7 @@ func (c *Client) GetServiceArea(ctx context.Context, id int) (*models.GasStation
 			return nil, err
 		}
 
-		c.Cache.Set(cacheKey, &station, 10*time.Minute)
+		c.Details.Set(cacheKey, &station, 10*time.Minute)
 		return &station, nil
 	})
 

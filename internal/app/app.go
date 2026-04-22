@@ -14,18 +14,23 @@ import (
 	"ohmypieno/internal/api"
 	"ohmypieno/internal/cache"
 	"ohmypieno/internal/handlers"
+	"ohmypieno/internal/models"
 )
 
 type App struct {
-	server      *http.Server
-	cache       *cache.Cache[any]
-	rateLimiter *rateLimiter
+	server        *http.Server
+	stationsCache *cache.Cache[*models.SearchResponse]
+	detailsCache  *cache.Cache[*models.GasStation]
+	geocodeCache  *cache.Cache[[]any]
+	rateLimiter   *rateLimiter
 }
 
 func New(cfg *Config, staticFiles fs.FS) (*App, error) {
-	c := cache.New[any]()
-	apiClient := api.NewClient(cfg.BaseURL, c)
-	geocodeClient := api.NewNominatimClient(c)
+	stationsCache := cache.New[*models.SearchResponse]()
+	detailsCache := cache.New[*models.GasStation]()
+	geocodeCache := cache.New[[]any]()
+	apiClient := api.NewClient(cfg.BaseURL, stationsCache, detailsCache)
+	geocodeClient := api.NewNominatimClient(geocodeCache)
 	h := handlers.NewServer(apiClient, geocodeClient)
 	h.Config.LatMin = cfg.LatMin
 	h.Config.LatMax = cfg.LatMax
@@ -58,9 +63,11 @@ func New(cfg *Config, staticFiles fs.FS) (*App, error) {
 	}
 
 	return &App{
-		server:      srv,
-		cache:       c,
-		rateLimiter: rl,
+		server:        srv,
+		stationsCache: stationsCache,
+		detailsCache:  detailsCache,
+		geocodeCache:  geocodeCache,
+		rateLimiter:   rl,
 	}, nil
 }
 
@@ -75,7 +82,9 @@ func (a *App) Handler() http.Handler {
 }
 
 func (a *App) Close() {
-	a.cache.Stop()
+	a.stationsCache.Stop()
+	a.detailsCache.Stop()
+	a.geocodeCache.Stop()
 	a.rateLimiter.stop()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

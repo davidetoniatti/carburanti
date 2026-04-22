@@ -14,9 +14,17 @@ import (
 	"ohmypieno/internal/models"
 )
 
+// newTestClient builds a Client with its own fresh typed caches.
+func newTestClient(baseURL string) *Client {
+	return NewClient(
+		baseURL,
+		cache.New[*models.SearchResponse](),
+		cache.New[*models.GasStation](),
+	)
+}
+
 func TestClient_GetFuels(t *testing.T) {
-	c := cache.New[any]()
-	client := NewClient("", c)
+	client := newTestClient("")
 
 	fuels, err := client.GetFuels(context.Background())
 	if err != nil {
@@ -53,8 +61,7 @@ func TestClient_SearchZone(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := cache.New[any]()
-	client := NewClient(server.URL, c)
+	client := newTestClient(server.URL)
 
 	res, err := client.SearchZone(context.Background(), 41.0, 12.0, 5)
 	if err != nil {
@@ -79,8 +86,7 @@ func TestClient_GetServiceArea(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := cache.New[any]()
-	client := NewClient(server.URL, c)
+	client := newTestClient(server.URL)
 
 	station, err := client.GetServiceArea(context.Background(), 123)
 	if err != nil {
@@ -99,8 +105,7 @@ func TestClient_ErrorHandling(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := cache.New[any]()
-	client := NewClient(server.URL, c)
+	client := newTestClient(server.URL)
 
 	_, err := client.SearchZone(context.Background(), 0, 0, 100)
 	if err == nil {
@@ -134,8 +139,7 @@ func TestClient_SingleflightCoalescing(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := cache.New[any]()
-	client := NewClient(server.URL, c)
+	client := newTestClient(server.URL)
 
 	// Fire many concurrent requests
 	const workers = 50
@@ -177,8 +181,7 @@ func TestClient_SingleflightCancellation(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := cache.New[any]()
-	client := NewClient(server.URL, c)
+	client := newTestClient(server.URL)
 
 	ctx1, cancel1 := context.WithCancel(context.Background())
 	ctx2 := context.Background()

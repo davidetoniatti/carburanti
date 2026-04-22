@@ -19,11 +19,11 @@ type Geocoder interface {
 
 type NominatimClient struct {
 	HTTPClient *http.Client
-	Cache      *cache.Cache[any]
+	Cache      *cache.Cache[[]any]
 	sfGroup    singleflight.Group
 }
 
-func NewNominatimClient(c *cache.Cache[any]) *NominatimClient {
+func NewNominatimClient(c *cache.Cache[[]any]) *NominatimClient {
 	return &NominatimClient{
 		HTTPClient: &http.Client{
 			Timeout: 10 * time.Second,
@@ -46,7 +46,7 @@ func (c *NominatimClient) Geocode(ctx context.Context, query, lang string) (any,
 	}
 
 	// Use a non-colliding separator \x00
-	cacheKey := fmt.Sprintf("geocode:%s\x00%s", query, safeLang)
+	cacheKey := fmt.Sprintf("%s\x00%s", query, safeLang)
 	if val, found := c.Cache.Get(cacheKey); found {
 		return val, nil
 	}
