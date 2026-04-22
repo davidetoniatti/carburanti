@@ -51,12 +51,3 @@ type FuelType struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
-
-type FuelTypeResponse struct {
-	Results []FuelType `json:"results"`
-}
-
-type Logo struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}

@@ -11,7 +11,6 @@ type Config struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
-	CacheTTL     time.Duration
 
 	// Validation
 	LatMin    float64
@@ -43,7 +42,6 @@ func LoadConfig() *Config {
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
-		CacheTTL:     5 * time.Minute,
 
 		LatMin:    35.0,
 		LatMax:    48.0,

@@ -11,14 +11,6 @@ import (
 	"ohmypieno/internal/models"
 )
 
-const (
-	FuelBenzina = 1
-	FuelGasolio = 2
-	FuelHVO     = 3
-	FuelGPL     = 4
-	FuelMetano  = 5
-)
-
 type Server struct {
 	Client   api.StationProvider
 	Geocoder api.Geocoder
