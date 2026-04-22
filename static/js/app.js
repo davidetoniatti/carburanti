@@ -370,14 +370,15 @@ async function showSuggestions(input, box) {
   try {
     const results = await geocodeAddress(query, state.lang);
     if (results?.length > 0) {
-      box.innerHTML = results
-        .map(
-          (res) =>
-            `<div class="suggestion-item" data-lat="${res.lat}" data-lon="${res.lon}">
-          ${res.display_name}
-        </div>`,
-        )
-        .join("");
+      box.innerHTML = "";
+      for (const res of results) {
+        const item = document.createElement("div");
+        item.className = "suggestion-item";
+        item.dataset.lat = res.lat;
+        item.dataset.lon = res.lon;
+        item.textContent = res.display_name;
+        box.appendChild(item);
+      }
       box.classList.remove("hidden");
     } else {
       box.classList.add("hidden");
