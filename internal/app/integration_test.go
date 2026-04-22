@@ -174,6 +174,9 @@ func TestIntegration_RateLimit429KeepsSecurityHeaders(t *testing.T) {
 	if resp.Header.Get("Retry-After") == "" {
 		t.Errorf("429 missing Retry-After")
 	}
+	if ct := resp.Header.Get("Content-Type"); ct != "application/json" {
+		t.Errorf("429 Content-Type: got %q, want application/json", ct)
+	}
 }
 
 // --- Static assets are not rate limited -------------------------------------

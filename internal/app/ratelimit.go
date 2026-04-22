@@ -104,8 +104,11 @@ func (rl *rateLimiter) middleware(next http.Handler) http.Handler {
 			return
 		}
 		if !rl.allow(rl.clientKey(r)) {
-			w.Header().Set("Retry-After", "1")
-			http.Error(w, `{"error":"rate limit exceeded"}`, http.StatusTooManyRequests)
+			h := w.Header()
+			h.Set("Content-Type", "application/json")
+			h.Set("Retry-After", "1")
+			w.WriteHeader(http.StatusTooManyRequests)
+			_, _ = w.Write([]byte(`{"error":"rate limit exceeded"}`))
 			return
 		}
 		next.ServeHTTP(w, r)
