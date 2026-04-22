@@ -15,6 +15,7 @@ import (
 	"ohmypieno/internal/cache"
 	"ohmypieno/internal/handlers"
 	"ohmypieno/internal/models"
+	"ohmypieno/internal/obs"
 )
 
 type App struct {
@@ -106,13 +107,17 @@ func (r *statusRecorder) WriteHeader(code int) {
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+		ctx, timing := obs.WithTiming(r.Context())
 		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
-		next.ServeHTTP(rec, r)
+		next.ServeHTTP(rec, r.WithContext(ctx))
+		upstream, calls := timing.Snapshot()
 		slog.Info("request handled",
 			"method", r.Method,
 			"path", r.URL.Path,
 			"status", rec.status,
-			"duration", time.Since(start))
+			"duration", time.Since(start),
+			"upstream", upstream,
+			"upstream_calls", calls)
 	})
 }
 

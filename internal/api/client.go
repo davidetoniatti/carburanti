@@ -15,6 +15,7 @@ import (
 
 	"ohmypieno/internal/cache"
 	"ohmypieno/internal/models"
+	"ohmypieno/internal/obs"
 )
 
 type StationProvider interface {
@@ -61,7 +62,9 @@ func (c *Client) doRequest(ctx context.Context, method, url string, body []byte)
 		req.Header.Set("Content-Type", "application/json")
 	}
 
+	start := time.Now()
 	resp, err := c.HTTPClient.Do(req)
+	obs.Record(ctx, time.Since(start))
 	if err != nil {
 		return nil, err
 	}
@@ -98,10 +101,10 @@ func (c *Client) SearchZone(ctx context.Context, lat, lng float64, radius int) (
 			return nil, err
 		}
 
-		// Background context: one caller's cancellation must not fail
-		// the shared upstream call for every other waiter on this key.
-		// HTTPClient.Timeout still bounds how long the call can run.
-		respBody, err := c.doRequest(context.Background(), "POST", c.BaseURL+"/search/zone", body)
+		// WithoutCancel preserves context values (e.g. the obs.Timing
+		// tracker) while decoupling the shared upstream call from the
+		// leader's cancellation. HTTPClient.Timeout bounds the call.
+		respBody, err := c.doRequest(context.WithoutCancel(ctx), "POST", c.BaseURL+"/search/zone", body)
 		if err != nil {
 			return nil, err
 		}
@@ -135,8 +138,8 @@ func (c *Client) GetServiceArea(ctx context.Context, id int) (*models.GasStation
 	// Coalesce station detail requests too
 	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
 		url := fmt.Sprintf("%s/registry/servicearea/%d", c.BaseURL, id)
-		// See SearchZone for why this is context.Background() rather than ctx.
-		respBody, err := c.doRequest(context.Background(), "GET", url, nil)
+		// See SearchZone for why this is WithoutCancel rather than ctx.
+		respBody, err := c.doRequest(context.WithoutCancel(ctx), "GET", url, nil)
 		if err != nil {
 			return nil, err
 		}

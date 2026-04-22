@@ -11,6 +11,7 @@ import (
 	"golang.org/x/sync/singleflight"
 
 	"ohmypieno/internal/cache"
+	"ohmypieno/internal/obs"
 )
 
 type Geocoder interface {
@@ -56,10 +57,10 @@ func (c *NominatimClient) Geocode(ctx context.Context, query, lang string) (any,
 		u := fmt.Sprintf("https://nominatim.openstreetmap.org/search?format=json&q=%s&countrycodes=it&limit=5",
 			url.QueryEscape(query))
 
-		// Background context so one caller's cancellation doesn't fail
-		// the shared upstream call for other waiters on this key.
-		// HTTPClient.Timeout still bounds the request duration.
-		req, err := http.NewRequestWithContext(context.Background(), "GET", u, nil)
+		// WithoutCancel preserves context values (e.g. the obs.Timing
+		// tracker) while isolating the shared upstream call from the
+		// leader's cancellation. HTTPClient.Timeout still bounds it.
+		req, err := http.NewRequestWithContext(context.WithoutCancel(ctx), "GET", u, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +69,9 @@ func (c *NominatimClient) Geocode(ctx context.Context, query, lang string) (any,
 		}
 		req.Header.Set("User-Agent", "OhMyPienoApp/1.0")
 
+		start := time.Now()
 		resp, err := c.HTTPClient.Do(req)
+		obs.Record(ctx, time.Since(start))
 		if err != nil {
 			return nil, err
 		}
