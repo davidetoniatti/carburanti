@@ -1,96 +1,64 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="logo-dark.svg">
-  <img src="logo-light.svg" alt="OhMyPieno">
-</picture>
+<p align="center">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="logo-dark.svg">
+      <img src="logo-light.svg" alt="OhMyPieno" style="width: 50%; height: auto;">
+    </picture>
+</p>
 
-Go web application that shows an interactive map of fuel prices in Italy, using real-time data from the official **MIMIT** (ex MISE) portal.
+**OhMyPieno** is an interactive map of fuel prices in Italy. The data comes from MIMIT's public portal ([carburanti.mise.gov.it](https://carburanti.mise.gov.it)). This is just a friendlier way to browse it.
 
-## Features
+## What it does
 
-- **Real-time Data**: Integrated with official Italian Ministry (MIMIT) APIs.
-- **Interactive Map**: OpenStreetMap with markers color-coded by price.
-- **Search**: Search by city/address.
-- **Detail View**: Full price breakdown (Self vs Served), contact info, and distance from your position.
-- **Smart Cache**: High-performance backend caching with request coalescing to minimize upstream load.
-- **3-Mode Theme**: Supports Dark, Light, and System-adaptive themes with real-time switching.
+- Find stations by address, by clicking on the map, or from your current location.
+- Filter by fuel type, brand, and search radius.
+- Open a station to see every pump's self-service and attended price, plus contacts and distance.
+- Markers are colored from cheapest to most expensive.
 
-## Requirements
-
-- Go 1.25+ (for local development)
-- Docker and Docker Compose
-
-## Quick Start
-
-### Local execution
+## Running it
 
 ```bash
-git clone https://github.com/davidetoniatti/ohmypieno
-cd ohmypieno
 go run .
 ```
 
-The application will be available at: http://localhost:8080
+Listens on `:8080`. The frontend is embedded in the binary with `go:embed`, so `go build -o ohmypieno .` gives you a single file to deploy.
 
-### Build from source
-
-```bash
-go build -o ohmypieno .
-./ohmypieno
-```
-
-The binary includes all static files (embedded using `go:embed`).
-
-## Deploy with Docker
-
-### Using Docker Compose (Recommended)
+A `Dockerfile` and `docker-compose.yml` are in the repo:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-### Using Docker directly
-
-1. Build the image:
-
-```bash
-docker build -t ohmypieno .
-```
-
-2. Run the container:
-
-```bash
-docker run -p 8080:8080 ohmypieno
-```
+Go 1.25 or newer for local development.
 
 ## Configuration
 
-The application can be configured using environment variables:
+| Variable              | Description                                  | Default                                  |
+| --------------------- | -------------------------------------------- | ---------------------------------------- |
+| `PORT`                | HTTP port                                    | `8080`                                   |
+| `OHMYPIENO_API_URL`   | MIMIT base URL                               | `https://carburanti.mise.gov.it/ospzApi` |
+| `TRUST_PROXY_HEADERS` | Honor `X-Forwarded-For` for rate-limiting    | unset                                    |
 
-| Variable            | Description               | Default                                  |
-| ------------------- | ------------------------- | ---------------------------------------- |
-| `PORT`              | HTTP server port          | `8080`                                   |
-| `OHMYPIENO_API_URL` | Base URL for the MISE API | `https://carburanti.mise.gov.it/ospzApi` |
-
-## Project Structure
+## Layout
 
 ```
 ohmypieno/
-├── main.go                    # HTTP Server + static files embedding
+├── main.go                entry point, embeds the static bundle
 ├── internal/
-│   ├── api/                   # Clients for external APIs
-│   ├── app/                   # App bootstrap and middlewares
-│   ├── cache/                 # Generic thread-safe cache
-│   ├── handlers/              # HTTP handlers
-│   └── models/                # Data structures
+│   ├── api/               upstream clients (MIMIT + Nominatim)
+│   ├── app/               bootstrap, middleware chain, rate limiter, gzip
+│   ├── cache/             generic LRU + TTL
+│   ├── handlers/          HTTP handlers and validation
+│   ├── models/            shared types
+│   └── obs/               per-request upstream-timing tracker
 └── static/
     ├── index.html
-    ├── css/                   # Stylesheets
-    └── js/                    # Modular frontend logic
+    ├── css/
+    └── js/                vanilla ES modules
 ```
 
-## API Endpoints
+## API
 
-- `GET /api/search?lat=&lng=&radius=` — Search for stations in the area
-- `GET /api/station?id=` — Station details
-- `GET /api/fuels` — Fuel types list
-- `GET /api/geocode?q=` — Geocoding proxy to Nominatim
+- `GET /api/search?lat=&lng=&radius=&fuel=&brand=` — stations near a point.
+- `GET /api/station?id=` — one station's details.
+- `GET /api/fuels` — the fuel type list.
+- `GET /api/geocode?q=` — address lookup, proxied to Nominatim.
