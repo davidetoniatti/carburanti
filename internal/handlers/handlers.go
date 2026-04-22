@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"ohmypieno/internal/api"
 	"ohmypieno/internal/models"
@@ -154,7 +155,7 @@ func (s *Server) GeocodeHandler(w http.ResponseWriter, r *http.Request) {
 		s.handleError(w, NewAppError(http.StatusMethodNotAllowed, "method not allowed", nil))
 		return
 	}
-	q := r.URL.Query().Get("q")
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	if q == "" {
 		s.handleError(w, NewAppError(http.StatusBadRequest, "query required", nil))
 		return

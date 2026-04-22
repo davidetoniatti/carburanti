@@ -344,6 +344,23 @@ func TestGeocodeHandler(t *testing.T) {
 			t.Errorf("expected 200, got %d", rr.Code)
 		}
 	})
+
+	t.Run("WhitespaceOnlyRejected", func(t *testing.T) {
+		called := false
+		mock.geocodeFunc = func(ctx context.Context, query, lang string) (any, error) {
+			called = true
+			return nil, nil
+		}
+		req := httptest.NewRequest("GET", "/api/geocode?q=%20%20", nil)
+		rr := httptest.NewRecorder()
+		srv.GeocodeHandler(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Errorf("expected 400 for whitespace-only query, got %d", rr.Code)
+		}
+		if called {
+			t.Errorf("upstream geocoder should not be invoked for whitespace-only query")
+		}
+	})
 }
 
 func TestStationHandler_DeepValidation(t *testing.T) {
