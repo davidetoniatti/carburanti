@@ -88,6 +88,30 @@ func TestGzip_SkipsWithoutAcceptEncoding(t *testing.T) {
 	}
 }
 
+// Regression: the middleware must not clobber a Vary value set by an
+// upstream handler (e.g. one that also varies on Origin for CORS).
+func TestGzip_PreservesExistingVary(t *testing.T) {
+	rr := runGzipMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Vary", "Origin")
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, strings.Repeat("x", 200))
+	}, "gzip")
+
+	values := rr.Header().Values("Vary")
+	seen := map[string]bool{}
+	for _, v := range values {
+		for _, part := range strings.Split(v, ",") {
+			seen[strings.TrimSpace(part)] = true
+		}
+	}
+	if !seen["Origin"] {
+		t.Errorf("Vary should still include Origin, got %v", values)
+	}
+	if !seen["Accept-Encoding"] {
+		t.Errorf("Vary should include Accept-Encoding, got %v", values)
+	}
+}
+
 func TestGzip_DropsContentLength(t *testing.T) {
 	body := strings.Repeat("x", 1024)
 	rr := runGzipMiddleware(func(w http.ResponseWriter, r *http.Request) {

@@ -195,7 +195,7 @@ func (w *gzipResponseWriter) decide() {
 
 	h := w.Header()
 	h.Del("Content-Length")
-	h.Set("Vary", "Accept-Encoding")
+	h.Add("Vary", "Accept-Encoding")
 	h.Set("Content-Encoding", "gzip")
 
 	w.gz = gzipWriterPool.Get().(*gzip.Writer)
