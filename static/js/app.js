@@ -356,7 +356,7 @@ function bindAddressSearch() {
   };
 
   searchBtn.addEventListener("click", doSearch);
-  addressInput.addEventListener("keypress", (e) => {
+  addressInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") doSearch();
   });
 }
