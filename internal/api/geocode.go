@@ -56,7 +56,10 @@ func (c *NominatimClient) Geocode(ctx context.Context, query, lang string) (any,
 		u := fmt.Sprintf("https://nominatim.openstreetmap.org/search?format=json&q=%s&countrycodes=it&limit=5",
 			url.QueryEscape(query))
 
-		req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
+		// Background context so one caller's cancellation doesn't fail
+		// the shared upstream call for other waiters on this key.
+		// HTTPClient.Timeout still bounds the request duration.
+		req, err := http.NewRequestWithContext(context.Background(), "GET", u, nil)
 		if err != nil {
 			return nil, err
 		}

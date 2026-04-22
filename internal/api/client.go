@@ -95,7 +95,10 @@ func (c *Client) SearchZone(ctx context.Context, lat, lng float64, radius int) (
 			return nil, err
 		}
 
-		respBody, err := c.doRequest(ctx, "POST", c.BaseURL+"/search/zone", body)
+		// Background context: one caller's cancellation must not fail
+		// the shared upstream call for every other waiter on this key.
+		// HTTPClient.Timeout still bounds how long the call can run.
+		respBody, err := c.doRequest(context.Background(), "POST", c.BaseURL+"/search/zone", body)
 		if err != nil {
 			return nil, err
 		}
@@ -129,7 +132,8 @@ func (c *Client) GetServiceArea(ctx context.Context, id int) (*models.GasStation
 	// Coalesce station detail requests too
 	ch := c.sfGroup.DoChan(cacheKey, func() (any, error) {
 		url := fmt.Sprintf("%s/registry/servicearea/%d", c.BaseURL, id)
-		respBody, err := c.doRequest(ctx, "GET", url, nil)
+		// See SearchZone for why this is context.Background() rather than ctx.
+		respBody, err := c.doRequest(context.Background(), "GET", url, nil)
 		if err != nil {
 			return nil, err
 		}

@@ -164,6 +164,9 @@ func TestClient_SingleflightCoalescing(t *testing.T) {
 	}
 }
 
+// The leader's cancellation must not fail waiters on the same key. The
+// upstream call runs on a background context, so only the cancelled caller
+// sees an error; other waiters still receive the shared result.
 func TestClient_SingleflightCancellation(t *testing.T) {
 	started := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -180,10 +183,11 @@ func TestClient_SingleflightCancellation(t *testing.T) {
 	ctx1, cancel1 := context.WithCancel(context.Background())
 	ctx2 := context.Background()
 
-	errChan := make(chan error, 2)
+	ctx1Err := make(chan error, 1)
+	ctx2Err := make(chan error, 1)
 	go func() {
 		_, err := client.SearchZone(ctx1, 41.0, 12.0, 5)
-		errChan <- err
+		ctx1Err <- err
 	}()
 
 	// Wait for first request to reach server
@@ -195,26 +199,19 @@ func TestClient_SingleflightCancellation(t *testing.T) {
 
 	go func() {
 		_, err := client.SearchZone(ctx2, 41.0, 12.0, 5)
-		errChan <- err
+		ctx2Err <- err
 	}()
 
-	// Small sleep to ensure second goroutine joined the flight
+	// Small sleep to ensure the second goroutine joined the flight before
+	// cancelling the leader. Replacing this with a channel barrier is on
+	// the roadmap.
 	time.Sleep(20 * time.Millisecond)
 	cancel1()
 
-	var errs []error
-	for i := 0; i < 2; i++ {
-		errs = append(errs, <-errChan)
+	if err := <-ctx1Err; err == nil {
+		t.Errorf("expected ctx1 to fail with cancellation, got nil")
 	}
-
-	succeeded := 0
-	for _, e := range errs {
-		if e == nil {
-			succeeded++
-		}
-	}
-
-	if succeeded != 0 {
-		t.Errorf("expected 0 successes (all cancelled), got %d. Errs: %v", succeeded, errs)
+	if err := <-ctx2Err; err != nil {
+		t.Errorf("expected ctx2 to succeed despite ctx1 cancellation, got %v", err)
 	}
 }
