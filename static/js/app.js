@@ -470,13 +470,21 @@ function focusMapOnStation(station) {
   const { lat, lng } = station.location;
   const zoom = Math.max(state.map.getZoom(), MAP_CONFIG.DEFAULT_ZOOM);
 
+  // On desktop the side panel covers the right part of the map. Shift the
+  // fly-to target right by half the panel width so the station lands in the
+  // visible half instead of under the panel.
+  let target = [lat, lng];
   if (window.innerWidth > BREAKPOINTS.DESKTOP) {
     const panelWidth = elements.panel?.offsetWidth ?? 0;
-    state.map.flyTo([lat, lng], zoom, { duration: MAP_CONFIG.FLY_DURATION_S });
-    return;
+    if (panelWidth > 0) {
+      const shifted = state.map
+        .project([lat, lng], zoom)
+        .add([panelWidth / 2, 0]);
+      target = state.map.unproject(shifted, zoom);
+    }
   }
 
-  state.map.flyTo([lat, lng], zoom, { duration: MAP_CONFIG.FLY_DURATION_S });
+  state.map.flyTo(target, zoom, { duration: MAP_CONFIG.FLY_DURATION_S });
 }
 
 export async function openStationById(
