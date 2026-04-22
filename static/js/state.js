@@ -15,6 +15,7 @@ export const state = {
   requests: {
     searchAbortController: null,
     detailAbortController: null,
+    suggestAbortController: null,
   },
   currentStationData: null,
   lastSearchCenter: null,

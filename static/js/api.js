@@ -122,10 +122,11 @@ export function fetchStationDetails(id) {
   return promise;
 }
 
-export async function geocodeAddress(query, lang) {
+export async function geocodeAddress(query, lang, signal) {
   const url = `/api/geocode?q=${encodeURIComponent(query)}`;
   const res = await fetch(url, {
     headers: { "Accept-Language": lang },
+    signal,
   });
 
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

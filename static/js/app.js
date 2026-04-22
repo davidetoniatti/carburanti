@@ -367,8 +367,14 @@ async function showSuggestions(input, box) {
     box.classList.add("hidden");
     return;
   }
+  state.requests.suggestAbortController?.abort();
+  state.requests.suggestAbortController = new AbortController();
   try {
-    const results = await geocodeAddress(query, state.lang);
+    const results = await geocodeAddress(
+      query,
+      state.lang,
+      state.requests.suggestAbortController.signal,
+    );
     if (results?.length > 0) {
       box.innerHTML = "";
       for (const res of results) {
@@ -383,7 +389,8 @@ async function showSuggestions(input, box) {
     } else {
       box.classList.add("hidden");
     }
-  } catch {
+  } catch (err) {
+    if (err.name === "AbortError") return;
     box.classList.add("hidden");
   }
 }
