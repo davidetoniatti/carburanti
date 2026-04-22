@@ -112,6 +112,7 @@ func (s *Server) isFuelMatch(f models.Fuel, fuelID int) bool {
 
 func (s *Server) StationHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
 		s.handleError(w, NewAppError(http.StatusMethodNotAllowed, "method not allowed", nil))
 		return
 	}
@@ -135,6 +136,7 @@ func (s *Server) StationHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) FuelsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
 		s.handleError(w, NewAppError(http.StatusMethodNotAllowed, "method not allowed", nil))
 		return
 	}
@@ -148,6 +150,7 @@ func (s *Server) FuelsHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) GeocodeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
 		s.handleError(w, NewAppError(http.StatusMethodNotAllowed, "method not allowed", nil))
 		return
 	}

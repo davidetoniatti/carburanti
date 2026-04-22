@@ -130,6 +130,9 @@ func TestSearchHandler_DeepValidation(t *testing.T) {
 		if rr.Code != http.StatusMethodNotAllowed {
 			t.Errorf("expected 405, got %d", rr.Code)
 		}
+		if allow := rr.Header().Get("Allow"); allow != "GET" {
+			t.Errorf("expected Allow: GET on 405, got %q", allow)
+		}
 	})
 
 	t.Run("Upstream Failure", func(t *testing.T) {
