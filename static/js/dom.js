@@ -1,13 +1,13 @@
 /**
  * dom.js
- * Caches frequently used DOM elements.
+ * Caches frequently used DOM elements and small viewport helpers.
  */
+
+import { BREAKPOINTS } from "./constants.js";
 
 export const elements = {
   app: document.getElementById("app"),
   topbar: document.getElementById("topbar"),
-  logo: document.getElementById("logo"),
-  logoContainer: document.getElementById("logo-container"),
 
   // Controls
   controls: document.getElementById("controls"),
@@ -36,12 +36,12 @@ export const elements = {
 
   // History Panel
   historyPanel: document.getElementById("historyPanel"),
-  historyPanelContent: document.getElementById("historyPanelContent"),
   historyPanelClose: document.getElementById("historyPanelClose"),
   historyToggle: document.getElementById("historyToggle"),
   historyList: document.getElementById("historyList"),
   themeToggle: document.getElementById("themeToggle"),
-
-  // Legend
-  legend: document.getElementById("legend"),
 };
+
+export function isMobileView() {
+  return window.innerWidth <= BREAKPOINTS.DESKTOP;
+}

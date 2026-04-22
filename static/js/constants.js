@@ -52,8 +52,6 @@ export const SHEET_CONFIG = {
   DRAG_THRESHOLD: 50,
   VELOCITY_THRESHOLD: 0.5,
   PEEK_HEIGHT_VH: 50,
-  FULL_HEIGHT_VH: 0,
-  HIDDEN_HEIGHT_VH: 100,
 };
 
 // Tutorial step icons. These match the app's existing topbar SVGs where

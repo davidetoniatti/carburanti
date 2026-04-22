@@ -24,7 +24,6 @@ import { Sheet } from "./Sheet.js";
 import { checkTutorial } from "./tutorial.js";
 import { bindKeyboardShortcuts, openShortcutsHelp } from "./keyboard.js";
 import {
-  BREAKPOINTS,
   TIMEOUTS,
   MAP_CONFIG,
   SEARCH_CONFIG,
@@ -32,20 +31,14 @@ import {
   BRAND_CONFIG,
   FUELS,
 } from "./constants.js";
-import { elements } from "./dom.js";
+import { elements, isMobileView } from "./dom.js";
 
 document.addEventListener("DOMContentLoaded", bootstrapApp);
 
 export function closePanel() {
   closePanelUI();
   state.currentStationData = null;
-
-  if (state.selectedStationId && state.markers.has(state.selectedStationId)) {
-    const entry = state.markers.get(state.selectedStationId);
-    if (entry.el) entry.el.classList.remove("selected");
-    entry.marker.setZIndexOffset(0);
-  }
-  state.selectedStationId = null;
+  selectMarker(null);
 }
 
 export function closeHistoryPanel() {
@@ -428,8 +421,7 @@ export async function performSearch(lat, lng) {
 
 function showPanelLoading() {
   elements.panel.classList.remove("hidden");
-  if (window.innerWidth <= BREAKPOINTS.DESKTOP)
-    elements.panel.classList.add("peek");
+  if (isMobileView()) elements.panel.classList.add("peek");
   elements.panelContent.innerHTML = `
     <div class="panel-loading">
       <div class="spinner"></div>
@@ -474,7 +466,7 @@ function focusMapOnStation(station) {
   // fly-to target right by half the panel width so the station lands in the
   // visible half instead of under the panel.
   let target = [lat, lng];
-  if (window.innerWidth > BREAKPOINTS.DESKTOP) {
+  if (!isMobileView()) {
     const panelWidth = elements.panel?.offsetWidth ?? 0;
     if (panelWidth > 0) {
       const shifted = state.map

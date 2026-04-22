@@ -4,8 +4,8 @@ import { escapeHtml, timeAgo, getDistance } from "./formatters.js";
 import { openStationById, closePanel, refreshBrandOptions } from "./app.js";
 import { refreshTutorialIfActive } from "./tutorial.js";
 import { refreshHelpModalIfActive } from "./keyboard.js";
-import { BREAKPOINTS, TIMEOUTS } from "./constants.js";
-import { elements } from "./dom.js";
+import { TIMEOUTS } from "./constants.js";
+import { elements, isMobileView } from "./dom.js";
 
 export function updateUILanguage() {
   document.documentElement.lang = state.lang;
@@ -71,8 +71,7 @@ export function toggleHistoryPanel() {
 
     renderHistory();
     elements.historyPanel.classList.remove("hidden");
-    if (window.innerWidth <= BREAKPOINTS.DESKTOP)
-      elements.historyPanel.classList.add("peek");
+    if (isMobileView()) elements.historyPanel.classList.add("peek");
     elements.historyToggle.classList.add("active");
   } else {
     closeHistoryPanelUI();
@@ -126,12 +125,12 @@ function renderFuelRow(name, selfPrice, servedPrice) {
       <span class="fuel-name">${escapeHtml(name)}</span>
       <div class="fuel-prices-combined">
         <div class="price-group">
-          <span class="price-label">SELF</span>
+          <span class="price-label">${t("price_self")}</span>
           <span class="price-value">${selfText}</span>
         </div>
         <span class="price-sep">|</span>
         <div class="price-group">
-          <span class="price-label">SERV</span>
+          <span class="price-label">${t("price_served")}</span>
           <span class="price-value">${servedText}</span>
         </div>
       </div>
@@ -166,7 +165,7 @@ export function renderPanel(station) {
   // always results in a visible panel.
   const wasHidden = elements.panel.classList.contains("hidden");
   elements.panel.classList.remove("hidden");
-  if (wasHidden && window.innerWidth <= BREAKPOINTS.DESKTOP) {
+  if (wasHidden && isMobileView()) {
     elements.panel.classList.add("peek");
   }
 

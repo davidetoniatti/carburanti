@@ -221,7 +221,7 @@ export function syncMarkers() {
 }
 
 export function selectMarker(id) {
-  const sId = String(id);
+  const sId = id == null ? null : String(id);
 
   if (state.selectedStationId && state.markers.has(state.selectedStationId)) {
     const prevEntry = state.markers.get(state.selectedStationId);
