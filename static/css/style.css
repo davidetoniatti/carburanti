@@ -285,7 +285,8 @@ body {
 
 /* Shared drawer layout for the detail and history panels. */
 #panel,
-#historyPanel {
+#historyPanel,
+#favoritesPanel {
   position: fixed;
   top: var(--topbar-h);
   right: 0;
@@ -303,7 +304,8 @@ body {
   border-radius: 12px 0 0 12px;
 }
 #panel.hidden,
-#historyPanel.hidden {
+#historyPanel.hidden,
+#favoritesPanel.hidden {
   transform: translateX(110%);
   visibility: hidden;
   transition:
@@ -315,17 +317,19 @@ body {
 }
 
 #panelContent,
-#historyPanelContent {
+#historyPanelContent,
+#favoritesPanelContent {
   padding: 12px 18px 24px;
 }
 
-#historyList {
+#historyList,
+#favoritesList {
   list-style: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.history-item {
+.station-item {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -333,7 +337,7 @@ body {
   cursor: pointer;
   transition: border-color 0.2s;
 }
-.history-item:hover {
+.station-item:hover {
   border-color: var(--accent);
 }
 
@@ -504,6 +508,45 @@ select:hover {
 }
 
 /* -- DETAIL PANEL CONTENT -- */
+.station-brand-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.favorite-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  margin-right: 32px; /* Avoid collision with desktop-only-close */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, transform 0.2s;
+}
+
+@media (max-width: 900px) {
+  .favorite-btn {
+    margin-right: 0;
+  }
+}
+
+.favorite-btn:hover {
+  color: var(--red);
+}
+
+.favorite-btn.active {
+  color: var(--red);
+}
+
+.favorite-btn:active {
+  transform: scale(0.9);
+}
+
 .station-brand {
   font-size: 22px;
   font-weight: 700;
@@ -514,6 +557,12 @@ select:hover {
 
 .station-header {
   padding: 10px 0 0 0;
+}
+
+@media (min-width: 901px) {
+  .station-header {
+    padding-top: 32px; /* Give space for the desktop-only-close button */
+  }
 }
 
 .station-address-container {
@@ -1216,7 +1265,8 @@ select:hover {
   /* Bottom sheets on mobile. Shared geometry; #panel and #historyPanel
      differ only in their separator (shadow above vs. border-top). */
   #panel,
-  #historyPanel {
+  #historyPanel,
+  #favoritesPanel {
     width: 100%;
     height: 80dvh;
     top: auto;
@@ -1233,21 +1283,25 @@ select:hover {
   #panel {
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
   }
-  #historyPanel {
+  #historyPanel,
+  #favoritesPanel {
     border-top: 1px solid var(--border);
   }
 
   #panel.hidden,
-  #historyPanel.hidden {
+  #historyPanel.hidden,
+  #favoritesPanel.hidden {
     transform: translateY(var(--hidden-vh));
     visibility: hidden;
   }
   #panel.peek,
-  #historyPanel.peek {
+  #historyPanel.peek,
+  #favoritesPanel.peek {
     transform: translateY(var(--peek-vh));
   }
   #panel.full,
-  #historyPanel.full {
+  #historyPanel.full,
+  #favoritesPanel.full {
     transform: translateY(var(--full-vh));
   }
 

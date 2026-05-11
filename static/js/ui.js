@@ -1,4 +1,4 @@
-import { state } from "./state.js";
+import { state, isFavorite, toggleFavorite } from "./state.js";
 import { t } from "./i18n.js";
 import { escapeHtml, timeAgo, getDistance } from "./formatters.js";
 import { openStationById, closePanel, refreshBrandOptions } from "./app.js";
@@ -62,52 +62,55 @@ export function closePanelUI() {
   elements.map.classList.remove("has-selection");
 }
 
-export function toggleHistoryPanel() {
-  const isHidden = elements.historyPanel.classList.contains("hidden");
+export function toggleCollectionPanel(panel, toggleBtn, renderFn) {
+  const isHidden = panel.classList.contains("hidden");
 
   if (isHidden) {
-    // On mobile we already close it, let's do it on desktop too to avoid overlap
+    // Close other panels to avoid overlap
     closePanel();
+    // Close other collections if they exist
+    if (panel === elements.historyPanel) {
+      if (elements.favoritesPanel) closeCollectionPanel(elements.favoritesPanel, elements.favoritesToggle);
+    } else if (elements.favoritesPanel && panel === elements.favoritesPanel) {
+      closeCollectionPanel(elements.historyPanel, elements.historyToggle);
+    }
 
-    renderHistory();
-    elements.historyPanel.classList.remove("hidden");
-    if (isMobileView()) elements.historyPanel.classList.add("peek");
-    elements.historyToggle.classList.add("active");
+    renderFn();
+    panel.classList.remove("hidden");
+    if (isMobileView()) panel.classList.add("peek");
+    toggleBtn.classList.add("active");
   } else {
-    closeHistoryPanelUI();
+    closeCollectionPanel(panel, toggleBtn);
   }
 }
 
-export function closeHistoryPanelUI() {
-  elements.historyPanel.classList.add("hidden");
-  elements.historyPanel.classList.remove("peek", "full");
-  elements.historyToggle.classList.remove("active");
+export function closeCollectionPanel(panel, toggleBtn) {
+  panel.classList.add("hidden");
+  panel.classList.remove("peek", "full");
+  if (toggleBtn) toggleBtn.classList.remove("active");
 }
 
-export function bindHistoryEvents(onHistoryClick) {
-  elements.historyList.addEventListener("click", (e) => {
+export function bindCollectionEvents(listEl, onSelect) {
+  listEl.addEventListener("click", (e) => {
     // Let the Open-in-Maps link handle its own click without reopening the
     // station in the background.
     if (e.target.closest(".station-map-link")) return;
 
-    const item = e.target.closest(".history-item");
+    const item = e.target.closest(".station-item");
     if (!item) return;
 
     const id = String(item.dataset.id);
-    const historyEntry = state.history.find((entry) => String(entry.id) === id);
-
-    onHistoryClick(id, historyEntry?.location);
-    closeHistoryPanelUI();
+    onSelect(id);
   });
 }
 
-export function renderHistory() {
-  if (state.history.length === 0) {
-    elements.historyList.innerHTML = `<li class="empty-msg">${t("no_history")}</li>`;
+export function renderStationList(items, listEl, emptyKey) {
+  if (items.length === 0) {
+    listEl.innerHTML = `<li class="empty-msg">${t(emptyKey)}</li>`;
     return;
   }
 
-  elements.historyList.innerHTML = state.history
+  listEl.innerHTML = items
     .map((entry) => {
       const mapsUrl = entry.location
         ? `https://www.google.com/maps/search/?api=1&query=${entry.location.lat},${entry.location.lng}`
@@ -122,7 +125,7 @@ export function renderHistory() {
             )
           : null;
       return `
-    <li class="history-item" data-id="${entry.id}">
+    <li class="station-item" data-id="${entry.id}">
       <div class="station-brand">${escapeHtml(entry.brand || t("nd"))}</div>
       <div class="station-address-container">
         <div class="station-address">${escapeHtml(entry.address || t("addr_not_available"))}</div>
@@ -191,6 +194,7 @@ export function renderPanel(station) {
     elements.panel.classList.add("peek");
   }
 
+  const isFav = isFavorite(station.id);
   const fuelMap = new Map();
   let latestDate = null;
 
@@ -234,7 +238,14 @@ export function renderPanel(station) {
 
   elements.panelContent.innerHTML = `
     <div class="station-header">
-      <div class="station-brand">${escapeHtml(station.brand || t("nd"))}</div>
+      <div class="station-brand-row">
+        <div class="station-brand">${escapeHtml(station.brand || t("nd"))}</div>
+        <button id="favoriteBtn" class="favorite-btn ${isFav ? "active" : ""}" aria-label="Toggle favorite">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="${isFav ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.72-8.72 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </button>
+      </div>
       <div class="station-address-container">
         <div class="station-address">${escapeHtml(addr)}</div>
         <a href="${mapsUrl}" target="_blank" rel="noopener" class="station-map-link">

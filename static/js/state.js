@@ -1,4 +1,4 @@
-import { SEARCH_CONFIG, HISTORY_CONFIG } from "./constants.js";
+import { SEARCH_CONFIG, HISTORY_CONFIG, STORAGE_KEYS } from "./constants.js";
 
 export const state = {
   map: null,
@@ -20,7 +20,8 @@ export const state = {
   currentStationData: null,
   lastSearchCenter: null,
   lastSearchZoom: null,
-  history: [],
+  history: JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || "[]"),
+  favorites: JSON.parse(localStorage.getItem(STORAGE_KEYS.FAVORITES) || "[]"),
   userLocation: null,
   userLocationMarker: null,
 };
@@ -49,6 +50,40 @@ export function addToHistory(station) {
     nextEntry,
     ...state.history.filter((item) => String(item.id) !== stationId),
   ].slice(0, HISTORY_CONFIG.MAX_SIZE);
+
+  localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(state.history));
+}
+
+export function isFavorite(id) {
+  return state.favorites.some((f) => String(f.id) === String(id));
+}
+
+export function toggleFavorite(station) {
+  const stationId = String(station.id);
+  const isFav = isFavorite(stationId);
+
+  if (isFav) {
+    state.favorites = state.favorites.filter((f) => String(f.id) !== stationId);
+  } else {
+    // Extract only necessary data for the list
+    let latestDate = null;
+    for (const f of station.fuels || []) {
+      if (f.insertDate && (!latestDate || f.insertDate > latestDate)) {
+        latestDate = f.insertDate;
+      }
+    }
+
+    state.favorites.push({
+      id: stationId,
+      brand: station.brand,
+      address: station.address,
+      location: station.location,
+      latestDate,
+    });
+  }
+
+  localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(state.favorites));
+  return !isFav;
 }
 
 export function getStateFromURL() {

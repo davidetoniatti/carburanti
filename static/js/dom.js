@@ -39,6 +39,12 @@ export const elements = {
   historyPanelClose: document.getElementById("historyPanelClose"),
   historyToggle: document.getElementById("historyToggle"),
   historyList: document.getElementById("historyList"),
+
+  // Favorites Panel
+  favoritesPanel: document.getElementById("favoritesPanel"),
+  favoritesPanelClose: document.getElementById("favoritesPanelClose"),
+  favoritesToggle: document.getElementById("favoritesToggle"),
+  favoritesList: document.getElementById("favoritesList"),
 };
 
 export function isMobileView() {

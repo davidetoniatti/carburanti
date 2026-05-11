@@ -1,4 +1,4 @@
-import { state, getStateFromURL, updateURL, addToHistory } from "./state.js";
+import { state, getStateFromURL, updateURL, addToHistory, toggleFavorite } from "./state.js";
 import { hasLocale, t } from "./i18n.js";
 import {
   searchStations,
@@ -14,11 +14,12 @@ import {
 import {
   updateUILanguage,
   closePanelUI,
-  toggleHistoryPanel,
-  closeHistoryPanelUI,
+  toggleCollectionPanel,
+  closeCollectionPanel,
   renderPanel,
   showToast,
-  bindHistoryEvents,
+  bindCollectionEvents,
+  renderStationList,
 } from "./ui.js";
 import { Sheet } from "./Sheet.js";
 import { checkTutorial } from "./tutorial.js";
@@ -41,8 +42,24 @@ export function closePanel() {
   selectMarker(null);
 }
 
+export function toggleHistoryPanel() {
+  toggleCollectionPanel(elements.historyPanel, elements.historyToggle, () => {
+    renderStationList(state.history, elements.historyList, "no_history");
+  });
+}
+
+export function toggleFavoritesPanel() {
+  toggleCollectionPanel(elements.favoritesPanel, elements.favoritesToggle, () => {
+    renderStationList(state.favorites, elements.favoritesList, "no_favorites");
+  });
+}
+
 export function closeHistoryPanel() {
-  closeHistoryPanelUI();
+  closeCollectionPanel(elements.historyPanel, elements.historyToggle);
+}
+
+export function closeFavoritesPanel() {
+  closeCollectionPanel(elements.favoritesPanel, elements.favoritesToggle);
 }
 
 async function bootstrapApp() {
@@ -94,10 +111,12 @@ async function bootstrapApp() {
   if (urlState.brand) state.selectedBrand = urlState.brand;
   bindBrandSelect();
   bindControls();
-  bindHistoryEvents(openStationById);
+  bindCollectionEvents(elements.historyList, openStationById);
+  bindCollectionEvents(elements.favoritesList, openStationById);
   bindKeyboardShortcuts();
   new Sheet("panel", "bottom");
   new Sheet("historyPanel", "bottom");
+  new Sheet("favoritesPanel", "bottom");
   new Sheet("controls", "top");
 
   // If no location in URL, try geolocating
@@ -264,9 +283,28 @@ function bindControls() {
   });
 
   elements.historyToggle.addEventListener("click", toggleHistoryPanel);
+  elements.favoritesToggle.addEventListener("click", toggleFavoritesPanel);
+
+  elements.panelContent.addEventListener("click", (e) => {
+    const favBtn = e.target.closest("#favoriteBtn");
+    if (!favBtn) return;
+
+    if (state.currentStationData) {
+      const isFav = toggleFavorite(state.currentStationData);
+      favBtn.classList.toggle("active", isFav);
+      const svg = favBtn.querySelector("svg");
+      svg.setAttribute("fill", isFav ? "currentColor" : "none");
+
+      // Refresh favorites list if it's open
+      if (!elements.favoritesPanel.classList.contains("hidden")) {
+        renderStationList(state.favorites, elements.favoritesList, "no_favorites");
+      }
+    }
+  });
 
   elements.panel.addEventListener("sheetClosed", closePanel);
   elements.historyPanel.addEventListener("sheetClosed", closeHistoryPanel);
+  elements.favoritesPanel.addEventListener("sheetClosed", closeFavoritesPanel);
 
   elements.filterToggle.addEventListener("click", () => {
     elements.filterToggle.classList.toggle("active");
@@ -284,6 +322,7 @@ function bindControls() {
 
   elements.panelClose.addEventListener("click", closePanel);
   elements.historyPanelClose.addEventListener("click", closeHistoryPanel);
+  elements.favoritesPanelClose.addEventListener("click", closeFavoritesPanel);
 
   elements.helpBtn?.addEventListener("click", () => {
     openShortcutsHelp();
@@ -295,6 +334,7 @@ function bindControls() {
 function resetSearchUI() {
   closePanel();
   closeHistoryPanel();
+  closeFavoritesPanel();
   elements.searchSuggestions.classList.add("hidden");
 }
 
@@ -485,7 +525,8 @@ export async function openStationById(
   const sId = String(id);
   selectMarker(sId);
 
-  closeHistoryPanelUI();
+  closeHistoryPanel();
+  closeFavoritesPanel();
 
   showPanelLoading();
 

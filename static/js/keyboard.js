@@ -1,10 +1,18 @@
 import { elements } from "./dom.js";
 import { t, translations } from "./i18n.js";
-import { toggleHistoryPanel, updateUILanguage } from "./ui.js";
+import { updateUILanguage } from "./ui.js";
 import { startTutorial } from "./tutorial.js";
 import { state, updateURL } from "./state.js";
 import { STORAGE_KEYS } from "./constants.js";
-import { closePanel, closeHistoryPanel, toggleTheme, setTheme } from './app.js';
+import {
+  closePanel,
+  closeHistoryPanel,
+  toggleTheme,
+  setTheme,
+  toggleHistoryPanel,
+  toggleFavoritesPanel,
+  closeFavoritesPanel
+} from './app.js';
 
 const LANGUAGE_NATIVE = {
   en: "English",
@@ -18,6 +26,7 @@ const SHORTCUTS = [
   { keys: ["/"], labelKey: "shortcut_search" },
   { keys: ["Ctrl", "K"], labelKey: "shortcut_search" },
   { keys: ["H"], labelKey: "shortcut_history" },
+  { keys: ["F"], labelKey: "shortcut_favorites" },
   { keys: ["L"], labelKey: "shortcut_locate" },
   { keys: ["T"], labelKey: "shortcut_theme" },
   { keys: ["R"], labelKey: "shortcut_refresh" },
@@ -81,6 +90,14 @@ function closeTopmost() {
     return true;
   }
 
+  if (
+    elements.favoritesPanel &&
+    !elements.favoritesPanel.classList.contains("hidden")
+  ) {
+    closeFavoritesPanel();
+    return true;
+  }
+
   // The filter drawer exists only on mobile (the toggle button is hidden on
   // desktop, so isRendered returns false there and desktop Escape skips this).
   if (
@@ -130,6 +147,11 @@ export function bindKeyboardShortcuts() {
       case "H":
         e.preventDefault();
         toggleHistoryPanel();
+        break;
+      case "f":
+      case "F":
+        e.preventDefault();
+        toggleFavoritesPanel();
         break;
       case "l":
       case "L":

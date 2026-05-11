@@ -1,6 +1,8 @@
 export const STORAGE_KEYS = {
   TUTORIAL_SEEN: "ohmypieno_tutorial_seen",
   THEME: "ohmypieno_theme",
+  HISTORY: "ohmypieno_history",
+  FAVORITES: "ohmypieno_favorites",
 };
 
 export const BREAKPOINTS = {
