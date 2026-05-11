@@ -39,7 +39,6 @@ export const elements = {
   historyPanelClose: document.getElementById("historyPanelClose"),
   historyToggle: document.getElementById("historyToggle"),
   historyList: document.getElementById("historyList"),
-  themeToggle: document.getElementById("themeToggle"),
 };
 
 export function isMobileView() {

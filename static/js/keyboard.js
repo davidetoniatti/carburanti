@@ -1,13 +1,11 @@
 import { elements } from "./dom.js";
 import { t, translations } from "./i18n.js";
 import { toggleHistoryPanel, updateUILanguage } from "./ui.js";
-import { closePanel, closeHistoryPanel } from "./app.js";
 import { startTutorial } from "./tutorial.js";
 import { state, updateURL } from "./state.js";
 import { STORAGE_KEYS } from "./constants.js";
+import { closePanel, closeHistoryPanel, toggleTheme, setTheme } from './app.js';
 
-// Human-readable native names for the languages we support. Not translated —
-// each name represents itself.
 const LANGUAGE_NATIVE = {
   en: "English",
   it: "Italiano",
@@ -141,7 +139,7 @@ export function bindKeyboardShortcuts() {
       case "t":
       case "T":
         e.preventDefault();
-        elements.themeToggle?.click();
+        toggleTheme();
         break;
       case "r":
       case "R":
@@ -162,6 +160,12 @@ export function refreshHelpModalIfActive() {
   if (activeHelpRefresh) activeHelpRefresh();
 }
 
+const THEME_LABELS = {
+  device: 'theme_system',
+  dark: 'theme_dark',
+  light: 'theme_light',
+};
+
 export function openShortcutsHelp() {
   if (document.getElementById("shortcuts-help-overlay")) return;
 
@@ -181,12 +185,20 @@ export function openShortcutsHelp() {
   heading.id = "shortcuts-help-title";
 
   const langSection = document.createElement("div");
-  langSection.className = "language-section";
+  langSection.className = "help-section";
   const langLabel = document.createElement("div");
   langLabel.className = "section-subtitle";
   const langButtons = document.createElement("div");
-  langButtons.className = "language-buttons";
+  langButtons.className = "section-buttons";
   langSection.append(langLabel, langButtons);
+
+  const themeSection = document.createElement('div');
+  themeSection.className = 'help-section';
+  const themeLabel = document.createElement('div');
+  themeLabel.className = 'section-subtitle';
+  const themeButtons = document.createElement('div');
+  themeButtons.className = 'section-buttons';
+  themeSection.append(themeLabel, themeButtons);
 
   const list = document.createElement("ul");
   list.className = "shortcuts-list";
@@ -206,13 +218,14 @@ export function openShortcutsHelp() {
   closeBtn.className = "btn-primary";
 
   actions.append(replayBtn, spacer, closeBtn);
-  modal.append(heading, langSection, list, actions);
+  modal.append(heading, langSection, themeSection, list, actions);
   overlay.append(modal);
   document.body.appendChild(overlay);
 
   const render = () => {
     heading.textContent = t("shortcuts_title");
     langLabel.textContent = t("language_label");
+    themeLabel.textContent = t("theme_label");
     replayBtn.textContent = t("replay_tutorial");
     closeBtn.textContent = t("close");
 
@@ -238,7 +251,7 @@ export function openShortcutsHelp() {
     Object.keys(translations).forEach((code) => {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "language-btn" + (state.lang === code ? " active" : "");
+      btn.className = "section-btn" + (state.lang === code ? " active" : "");
       btn.textContent = LANGUAGE_NATIVE[code] || code;
       btn.addEventListener("click", () => {
         if (state.lang === code) return;
@@ -246,9 +259,25 @@ export function openShortcutsHelp() {
         updateUILanguage();
         updateURL();
         // render() replaced the buttons; move focus back onto the new active one.
-        langButtons.querySelector(".language-btn.active")?.focus();
+        langButtons.querySelector(".section-btn.active")?.focus();
       });
       langButtons.appendChild(btn);
+    });
+    themeButtons.replaceChildren();
+    Object.entries(THEME_LABELS).forEach(([mode, labelKey]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `section-btn ${state.theme === mode ? 'active' : ''}`;
+      btn.textContent = t(labelKey);
+
+      btn.addEventListener('click', () => {
+        if (state.theme === mode) return;
+        setTheme(mode);
+        render();
+        themeButtons.querySelector('.section-btn.active')?.focus();
+      });
+
+      themeButtons.appendChild(btn);
     });
   };
 

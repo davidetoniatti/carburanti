@@ -78,6 +78,10 @@ export const translations = {
     help_btn_label: "Help",
     replay_tutorial: "Replay tutorial",
     close: "Close",
+    theme_label: 'Theme',
+    theme_system: 'System',
+    theme_dark: 'Dark',
+    theme_light: 'Light',
   },
   it: {
     title: "OhMyPieno",
@@ -157,6 +161,10 @@ export const translations = {
     help_btn_label: "Aiuto",
     replay_tutorial: "Riavvia il tutorial",
     close: "Chiudi",
+    theme_label: 'Tema',
+    theme_system: 'Sistema',
+    theme_dark: 'Scuro',
+    theme_light: 'Chiaro',
   },
 };
 

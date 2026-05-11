@@ -121,13 +121,13 @@ async function bootstrapApp() {
   }
 }
 
-function setTheme(mode) {
+export function setTheme(mode) {
   state.theme = mode;
   localStorage.setItem(STORAGE_KEYS.THEME, mode);
   applyThemeByMode(mode);
 }
 
-function applyThemeByMode(mode) {
+export function applyThemeByMode(mode) {
   let activeTheme = mode;
   if (mode === "device") {
     activeTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -139,7 +139,7 @@ function applyThemeByMode(mode) {
   document.documentElement.setAttribute("data-theme-mode", mode);
 }
 
-function toggleTheme() {
+export function toggleTheme() {
   const modes = ["device", "dark", "light"];
   const currentIndex = modes.indexOf(state.theme);
   const nextIndex = (currentIndex + 1) % modes.length;
@@ -281,8 +281,6 @@ function bindControls() {
     const c = state.map.getCenter();
     performSearch(c.lat, c.lng);
   });
-
-  elements.themeToggle.addEventListener("click", toggleTheme);
 
   elements.panelClose.addEventListener("click", closePanel);
   elements.historyPanelClose.addEventListener("click", closeHistoryPanel);

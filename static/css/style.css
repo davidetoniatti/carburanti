@@ -857,7 +857,7 @@ select:hover {
   text-align: right;
 }
 
-.language-section {
+.help-section {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -874,11 +874,11 @@ select:hover {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.language-buttons {
+.section-buttons {
   display: flex;
   gap: 6px;
 }
-.language-btn {
+.section-btn {
   background: var(--surface2);
   border: 1px solid var(--border);
   color: var(--text);
@@ -892,16 +892,16 @@ select:hover {
     border-color 0.2s,
     background-color 0.2s;
 }
-.language-btn:hover {
+.section-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
-.language-btn.active {
+.section-btn.active {
   background: var(--accent-tint-strong);
   border-color: var(--accent);
   color: var(--accent);
 }
-.language-btn:focus-visible {
+.section-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

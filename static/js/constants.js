@@ -90,6 +90,5 @@ export const TUTORIAL_STEPS = [
     highlight: "#historyToggle",
     icon: ICON_HISTORY,
   },
-  { textKey: "tutorial_step6", highlight: "#themeToggle", icon: ICON_THEME },
-  { textKey: "tutorial_step7", highlight: "#locateBtn", icon: ICON_LOCATE },
+  { textKey: "tutorial_step6", highlight: "#locateBtn", icon: ICON_LOCATE },
 ];
