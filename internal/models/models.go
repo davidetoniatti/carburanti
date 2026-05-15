@@ -1,7 +1,5 @@
 package models
 
-import "encoding/json"
-
 type Location struct {
 	Lat float64 `json:"lat"`
 	Lng float64 `json:"lng"`
@@ -29,11 +27,10 @@ type GasStation struct {
 	Distance         string          `json:"distance,omitempty"`
 	PhoneNumber      string          `json:"phoneNumber,omitempty"`
 	Email            string          `json:"email,omitempty"`
-	Website          string          `json:"website,omitempty"`
-	Company          string          `json:"company,omitempty"`
-	Services         json.RawMessage `json:"services,omitempty"`
-	SelectedPrice    float64         `json:"selectedPrice,omitempty"`
-	SelectedFuelName string          `json:"selectedFuelName,omitempty"`
+	Website          string    `json:"website,omitempty"`
+	Company          string    `json:"company,omitempty"`
+	SelectedPrice    float64   `json:"selectedPrice,omitempty"`
+	SelectedFuelName string    `json:"selectedFuelName,omitempty"`
 }
 
 type SearchRequest struct {

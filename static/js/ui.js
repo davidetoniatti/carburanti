@@ -1,7 +1,7 @@
 import { state, isFavorite, toggleFavorite } from "./state.js";
 import { t } from "./i18n.js";
 import { escapeHtml, timeAgo, getDistance } from "./formatters.js";
-import { openStationById, closePanel, refreshBrandOptions } from "./app.js";
+import { openStationById, closePanel, refreshBrandOptions } from "./panels.js";
 import { refreshTutorialIfActive } from "./tutorial.js";
 import { refreshSettingsModalIfActive } from "./keyboard.js";
 import { TIMEOUTS } from "./constants.js";

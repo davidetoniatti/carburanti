@@ -50,7 +50,8 @@ class TTLCache {
 
 const searchCache = new TTLCache(SEARCH_CACHE_SIZE);
 const detailsCache = new TTLCache(DETAILS_CACHE_SIZE);
-const detailPromises = new Map();
+const activeSearches = new Map();
+const activeDetails = new Map();
 
 function getQuantizedKey(lat, lng, radius, fuelId) {
   const qLat = Math.round(lat * 10000) / 10000;
@@ -63,26 +64,32 @@ export function searchStations(lat, lng, radius, fuelId) {
   const cached = searchCache.get(cacheKey);
 
   if (cached) {
-    return cached;
+    return Promise.resolve(cached);
+  }
+
+  if (activeSearches.has(cacheKey)) {
+    return activeSearches.get(cacheKey);
   }
 
   state.requests.searchAbortController?.abort();
   state.requests.searchAbortController = new AbortController();
 
-  const promise = fetch(
-    `/api/search?lat=${lat}&lng=${lng}&radius=${radius}&fuel=${fuelId}`,
-    { signal: state.requests.searchAbortController.signal },
-  )
-    .then((res) => {
+  const promise = (async () => {
+    try {
+      const res = await fetch(
+        `/api/search?lat=${lat}&lng=${lng}&radius=${radius}&fuel=${fuelId}`,
+        { signal: state.requests.searchAbortController.signal },
+      );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    })
-    .catch((err) => {
-      searchCache.delete(cacheKey);
-      throw err;
-    });
+      const data = await res.json();
+      searchCache.set(cacheKey, data);
+      return data;
+    } finally {
+      activeSearches.delete(cacheKey);
+    }
+  })();
 
-  searchCache.set(cacheKey, promise);
+  activeSearches.set(cacheKey, promise);
   return promise;
 }
 
@@ -94,31 +101,28 @@ export function fetchStationDetails(id) {
     return Promise.resolve(cached);
   }
 
-  if (detailPromises.has(stationId)) {
-    return detailPromises.get(stationId);
+  if (activeDetails.has(stationId)) {
+    return activeDetails.get(stationId);
   }
 
   state.requests.detailAbortController?.abort();
   state.requests.detailAbortController = new AbortController();
 
-  const promise = fetch(`/api/station?id=${id}`, {
-    signal: state.requests.detailAbortController.signal,
-  })
-    .then((res) => {
+  const promise = (async () => {
+    try {
+      const res = await fetch(`/api/station?id=${id}`, {
+        signal: state.requests.detailAbortController.signal,
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    })
-    .then((data) => {
+      const data = await res.json();
       detailsCache.set(stationId, data);
-      detailPromises.delete(stationId);
       return data;
-    })
-    .catch((err) => {
-      detailPromises.delete(stationId);
-      throw err;
-    });
+    } finally {
+      activeDetails.delete(stationId);
+    }
+  })();
 
-  detailPromises.set(stationId, promise);
+  activeDetails.set(stationId, promise);
   return promise;
 }
 

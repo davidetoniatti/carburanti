@@ -1,9 +1,7 @@
-import { state, getStateFromURL, updateURL, addToHistory, toggleFavorite } from "./state.js";
+import { state, getStateFromURL, updateURL, toggleFavorite } from "./state.js";
 import { hasLocale, t } from "./i18n.js";
 import {
-  searchStations,
   geocodeAddress,
-  fetchStationDetails,
 } from "./api.js";
 import {
   initMap,
@@ -13,54 +11,33 @@ import {
 } from "./map.js";
 import {
   updateUILanguage,
-  closePanelUI,
-  toggleCollectionPanel,
-  closeCollectionPanel,
   renderPanel,
   showToast,
   bindCollectionEvents,
-  renderStationList,
 } from "./ui.js";
+import {
+  closePanel,
+  toggleHistoryPanel,
+  toggleFavoritesPanel,
+  closeHistoryPanel,
+  closeFavoritesPanel,
+  refreshBrandOptions,
+  performSearch,
+  openStationById,
+  resetSearchUI,
+} from "./panels.js";
 import { Sheet } from "./Sheet.js";
-import { checkTutorial } from "./tutorial.js";
 import { bindKeyboardShortcuts, openSettingsModal } from "./keyboard.js";
 import {
   TIMEOUTS,
   MAP_CONFIG,
   SEARCH_CONFIG,
   STORAGE_KEYS,
-  BRAND_CONFIG,
   FUELS,
 } from "./constants.js";
-import { elements, isMobileView } from "./dom.js";
+import { elements } from "./dom.js";
 
 document.addEventListener("DOMContentLoaded", bootstrapApp);
-
-export function closePanel() {
-  closePanelUI();
-  state.currentStationData = null;
-  selectMarker(null);
-}
-
-export function toggleHistoryPanel() {
-  toggleCollectionPanel(elements.historyPanel, elements.historyToggle, () => {
-    renderStationList(state.history, elements.historyList, "no_history");
-  });
-}
-
-export function toggleFavoritesPanel() {
-  toggleCollectionPanel(elements.favoritesPanel, elements.favoritesToggle, () => {
-    renderStationList(state.favorites, elements.favoritesList, "no_favorites");
-  });
-}
-
-export function closeHistoryPanel() {
-  closeCollectionPanel(elements.historyPanel, elements.historyToggle);
-}
-
-export function closeFavoritesPanel() {
-  closeCollectionPanel(elements.favoritesPanel, elements.favoritesToggle);
-}
 
 async function bootstrapApp() {
   const savedLang = localStorage.getItem(STORAGE_KEYS.LANG);
@@ -436,125 +413,5 @@ async function showSuggestions(input, box) {
   } catch (err) {
     if (err.name === "AbortError") return;
     box.classList.add("hidden");
-  }
-}
-
-let firstSearchDone = false;
-
-export async function performSearch(lat, lng) {
-  elements.searchHereBtn.classList.add("hidden");
-  try {
-    closePanel();
-    const data = await searchStations(
-      lat,
-      lng,
-      state.radius,
-      state.selectedFuelId,
-    );
-    state.stationsById.clear();
-    for (const s of data.results || []) {
-      state.stationsById.set(String(s.id), s);
-    }
-    state.lastSearchCenter = L.latLng(lat, lng);
-    state.lastSearchZoom = state.map?.getZoom() ?? null;
-    refreshBrandOptions();
-    syncMarkers();
-
-    if (!firstSearchDone) {
-      firstSearchDone = true;
-      checkTutorial();
-    }
-  } catch (err) {
-    if (err.name !== "AbortError")
-      showToast(t("error", { msg: err.message }), "error");
-  }
-}
-
-function showPanelLoading() {
-  elements.panel.classList.remove("hidden");
-  if (isMobileView()) elements.panel.classList.add("peek");
-  elements.panelContent.innerHTML = `
-    <div class="panel-loading">
-      <div class="spinner"></div>
-      <p>${t("loading_details")}</p>
-    </div>`;
-}
-
-function showPanelError(message) {
-  elements.panelContent.innerHTML = `<div class="panel-loading"><p>${t("error", { msg: message })}</p></div>`;
-}
-
-function resolveStationLocation(station, knownLocation) {
-  return (
-    station.location ??
-    knownLocation ??
-    state.stationsById.get(String(station.id))?.location ??
-    null
-  );
-}
-
-async function ensureStationVisible(station, forceSearch) {
-  const sId = String(station.id);
-  if (!station.location) return;
-
-  if (forceSearch || !state.markers.has(sId)) {
-    const zoom = Math.max(state.map.getZoom(), MAP_CONFIG.DEFAULT_ZOOM);
-    state.map.setView([station.location.lat, station.location.lng], zoom, {
-      animate: false,
-    });
-    await performSearch(station.location.lat, station.location.lng);
-    selectMarker(sId);
-  }
-}
-
-function focusMapOnStation(station) {
-  if (!station.location) return;
-
-  const { lat, lng } = station.location;
-  const zoom = Math.max(state.map.getZoom(), MAP_CONFIG.DEFAULT_ZOOM);
-
-  // On desktop the side panel covers the right part of the map. Shift the
-  // fly-to target right by half the panel width so the station lands in the
-  // visible half instead of under the panel.
-  let target = [lat, lng];
-  if (!isMobileView()) {
-    const panelWidth = elements.panel?.offsetWidth ?? 0;
-    if (panelWidth > 0) {
-      const shifted = state.map
-        .project([lat, lng], zoom)
-        .add([panelWidth / 2, 0]);
-      target = state.map.unproject(shifted, zoom);
-    }
-  }
-
-  state.map.flyTo(target, zoom, { duration: MAP_CONFIG.FLY_DURATION_S });
-}
-
-export async function openStationById(
-  id,
-  knownLocation = null,
-  forceSearch = false,
-) {
-  const sId = String(id);
-  selectMarker(sId);
-
-  closeHistoryPanel();
-  closeFavoritesPanel();
-
-  showPanelLoading();
-
-  try {
-    const station = await fetchStationDetails(sId);
-    station.location = resolveStationLocation(station, knownLocation);
-
-    addToHistory(station);
-    await ensureStationVisible(station, forceSearch);
-
-    state.currentStationData = station;
-    focusMapOnStation(station);
-    renderPanel(station);
-  } catch (err) {
-    if (err.name === "AbortError") return;
-    showPanelError(err.message);
   }
 }

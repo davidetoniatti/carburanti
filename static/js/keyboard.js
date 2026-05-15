@@ -7,12 +7,11 @@ import { STORAGE_KEYS } from "./constants.js";
 import {
   closePanel,
   closeHistoryPanel,
-  toggleTheme,
-  setTheme,
   toggleHistoryPanel,
   toggleFavoritesPanel,
   closeFavoritesPanel
-} from './app.js';
+} from './panels.js';
+import { toggleTheme, setTheme } from './app.js';
 
 const LANGUAGE_NATIVE = {
   en: "English",
