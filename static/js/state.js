@@ -1,5 +1,16 @@
 import { SEARCH_CONFIG, HISTORY_CONFIG, STORAGE_KEYS } from "./constants.js";
 
+function getJSONFromStorage(key, defaultValue) {
+  try {
+    const val = localStorage.getItem(key);
+    if (!val) return defaultValue;
+    return JSON.parse(val);
+  } catch (e) {
+    console.error(`Error parsing storage key "${key}":`, e);
+    return defaultValue;
+  }
+}
+
 export const state = {
   map: null,
   markers: new Map(),
@@ -20,8 +31,8 @@ export const state = {
   currentStationData: null,
   lastSearchCenter: null,
   lastSearchZoom: null,
-  history: JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || "[]"),
-  favorites: JSON.parse(localStorage.getItem(STORAGE_KEYS.FAVORITES) || "[]"),
+  history: getJSONFromStorage(STORAGE_KEYS.HISTORY, []),
+  favorites: getJSONFromStorage(STORAGE_KEYS.FAVORITES, []),
   userLocation: null,
   userLocationMarker: null,
 };
