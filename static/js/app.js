@@ -23,7 +23,7 @@ import {
 } from "./ui.js";
 import { Sheet } from "./Sheet.js";
 import { checkTutorial } from "./tutorial.js";
-import { bindKeyboardShortcuts, openShortcutsHelp } from "./keyboard.js";
+import { bindKeyboardShortcuts, openSettingsModal } from "./keyboard.js";
 import {
   TIMEOUTS,
   MAP_CONFIG,
@@ -325,7 +325,7 @@ function bindControls() {
   elements.favoritesPanelClose.addEventListener("click", closeFavoritesPanel);
 
   elements.helpBtn?.addEventListener("click", () => {
-    openShortcutsHelp();
+    openSettingsModal();
   });
 
   bindAddressSearch();

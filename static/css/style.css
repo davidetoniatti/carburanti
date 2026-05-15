@@ -747,6 +747,10 @@ select:hover {
 #tutorial-overlay.fade-out {
   opacity: 0;
 }
+#help-indicator.tutorial-highlight {
+  position: absolute;
+}
+
 .tutorial-modal {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -839,12 +843,12 @@ select:hover {
 }
 
 /* -- SHORTCUTS HELP MODAL -- */
-#shortcuts-help-overlay {
+#settings-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
-  z-index: 3000;
+  z-index: 5000;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -853,15 +857,26 @@ select:hover {
   opacity: 1;
   transition: opacity 0.3s;
 }
-#shortcuts-help-overlay.fade-out {
+#settings-overlay.fade-out {
   opacity: 0;
 }
-.shortcuts-modal {
+.settings-modal {
   max-width: 480px;
   text-align: left;
 }
-.shortcuts-modal h2 {
+.settings-modal h2 {
   text-align: center;
+}
+.settings-group-title {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
 }
 .shortcuts-list {
   list-style: none;
@@ -904,9 +919,6 @@ select:hover {
   display: grid;
   gap: 0;
   margin: 0 0 20px;
-  padding: 8px 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
 }
 
 .settings-row {
@@ -914,11 +926,11 @@ select:hover {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 0;
+  padding: 8px 0;
 }
 
 .settings-row + .settings-row {
-  border-top: 1px solid var(--border);
+  border-top: none;
 }
 
 .settings-label {

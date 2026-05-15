@@ -30,7 +30,7 @@ const SHORTCUTS = [
   { keys: ["L"], labelKey: "shortcut_locate" },
   { keys: ["T"], labelKey: "shortcut_theme" },
   { keys: ["R"], labelKey: "shortcut_refresh" },
-  { keys: ["?"], labelKey: "shortcut_help" },
+  { keys: ["?"], labelKey: "shortcut_settings" },
 ];
 
 // True when an element is present in the layout tree (not display:none,
@@ -65,9 +65,9 @@ function clickIfPresent(el) {
 }
 
 function closeTopmost() {
-  const help = document.getElementById("shortcuts-help-overlay");
-  if (help) {
-    help.dispatchEvent(new CustomEvent("helpClose"));
+  const settings = document.getElementById("settings-overlay");
+  if (settings) {
+    settings.dispatchEvent(new CustomEvent("settingsClose"));
     return true;
   }
 
@@ -141,7 +141,7 @@ export function bindKeyboardShortcuts() {
         break;
       case "?":
         e.preventDefault();
-        openShortcutsHelp();
+        openSettingsModal();
         break;
       case "h":
       case "H":
@@ -173,13 +173,13 @@ export function bindKeyboardShortcuts() {
 }
 
 // ---------------------------------------------------------------------------
-// Keyboard shortcuts help modal
+// Settings hub modal
 // ---------------------------------------------------------------------------
 
-let activeHelpRefresh = null;
+let activeSettingsRefresh = null;
 
-export function refreshHelpModalIfActive() {
-  if (activeHelpRefresh) activeHelpRefresh();
+export function refreshSettingsModalIfActive() {
+  if (activeSettingsRefresh) activeSettingsRefresh();
 }
 
 const THEME_LABELS = {
@@ -203,24 +203,32 @@ function createSettingsRow(labelText) {
   return { row, label, buttons };
 }
 
-export function openShortcutsHelp() {
-  if (document.getElementById("shortcuts-help-overlay")) return;
+function createGroupTitle(textKey) {
+  const title = document.createElement('div');
+  title.className = 'settings-group-title';
+  title.textContent = t(textKey);
+  return title;
+}
+
+export function openSettingsModal() {
+  if (document.getElementById("settings-overlay")) return;
 
   const previouslyFocused = document.activeElement;
 
   const overlay = document.createElement("div");
-  overlay.id = "shortcuts-help-overlay";
+  overlay.id = "settings-overlay";
 
   const modal = document.createElement("div");
-  modal.className = "tutorial-modal shortcuts-modal";
+  modal.className = "tutorial-modal settings-modal";
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-modal", "true");
-  modal.setAttribute("aria-labelledby", "shortcuts-help-title");
+  modal.setAttribute("aria-labelledby", "settings-title");
   modal.tabIndex = -1;
 
   const heading = document.createElement("h2");
-  heading.id = "shortcuts-help-title";
+  heading.id = "settings-title";
 
+  const preferencesTitle = createGroupTitle('preferences_title');
   const settingsSection = document.createElement('div');
   settingsSection.className = 'settings-section';
 
@@ -229,6 +237,7 @@ export function openShortcutsHelp() {
 
   settingsSection.append(languageRow.row, themeRow.row);
 
+  const shortcutsTitle = createGroupTitle('shortcuts_title');
   const list = document.createElement("ul");
   list.className = "shortcuts-list";
 
@@ -247,14 +256,16 @@ export function openShortcutsHelp() {
   closeBtn.className = "btn-primary";
 
   actions.append(replayBtn, spacer, closeBtn);
-  modal.append(heading, settingsSection, list, actions);
+  modal.append(heading, preferencesTitle, settingsSection, shortcutsTitle, list, actions);
   overlay.append(modal);
   document.body.appendChild(overlay);
 
   const render = () => {
-    heading.textContent = t("shortcuts_title");
+    heading.textContent = t("settings_title");
+    preferencesTitle.textContent = t("preferences_title");
     languageRow.label.textContent = t("language_label");
     themeRow.label.textContent = t("theme_label");
+    shortcutsTitle.textContent = t("shortcuts_title");
     replayBtn.textContent = t("replay_tutorial");
     closeBtn.textContent = t("close");
 
@@ -315,13 +326,13 @@ export function openShortcutsHelp() {
     });
   };
 
-  activeHelpRefresh = render;
+  activeSettingsRefresh = render;
   render();
 
   const close = () => {
-    activeHelpRefresh = null;
+    activeSettingsRefresh = null;
     document.removeEventListener("keydown", onKeydown, true);
-    overlay.removeEventListener("helpClose", close);
+    overlay.removeEventListener("settingsClose", close);
     overlay.classList.add("fade-out");
 
     const remove = () => {
@@ -365,7 +376,7 @@ export function openShortcutsHelp() {
     if (e.target === overlay) close();
   });
 
-  overlay.addEventListener("helpClose", close);
+  overlay.addEventListener("settingsClose", close);
   document.addEventListener("keydown", onKeydown, true);
 
   closeBtn.focus();

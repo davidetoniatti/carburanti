@@ -3,7 +3,7 @@ import { t } from "./i18n.js";
 import { escapeHtml, timeAgo, getDistance } from "./formatters.js";
 import { openStationById, closePanel, refreshBrandOptions } from "./app.js";
 import { refreshTutorialIfActive } from "./tutorial.js";
-import { refreshHelpModalIfActive } from "./keyboard.js";
+import { refreshSettingsModalIfActive } from "./keyboard.js";
 import { TIMEOUTS } from "./constants.js";
 import { elements, isMobileView } from "./dom.js";
 
@@ -30,7 +30,7 @@ export function updateUILanguage() {
   }
 
   refreshTutorialIfActive();
-  refreshHelpModalIfActive();
+  refreshSettingsModalIfActive();
   refreshBrandOptions();
 }
 
