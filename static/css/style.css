@@ -510,9 +510,10 @@ select:hover {
 /* -- DETAIL PANEL CONTENT -- */
 .station-brand-row {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .favorite-btn {
@@ -520,19 +521,17 @@ select:hover {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 4px;
-  margin-right: 32px; /* Avoid collision with desktop-only-close */
+  padding: 2px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s, transform 0.2s;
+  transition: color 0.2s;
 }
 
-@media (max-width: 900px) {
-  .favorite-btn {
-    margin-right: 0;
-  }
+.favorite-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 .favorite-btn:hover {
@@ -543,16 +542,11 @@ select:hover {
   color: var(--red);
 }
 
-.favorite-btn:active {
-  transform: scale(0.9);
-}
-
 .station-brand {
   font-size: 22px;
   font-weight: 700;
   color: var(--text);
   line-height: 1.2;
-  margin-bottom: 6px;
 }
 
 .station-header {
