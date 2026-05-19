@@ -201,6 +201,10 @@ function bindControls() {
   elements.historyPanel.addEventListener("sheetClosed", closeHistoryPanel);
   elements.favoritesPanel.addEventListener("sheetClosed", closeFavoritesPanel);
 
+  elements.panelClose.addEventListener("click", closePanel);
+  elements.historyPanelClose.addEventListener("click", closeHistoryPanel);
+  elements.favoritesPanelClose.addEventListener("click", closeFavoritesPanel);
+
   elements.filterToggle.addEventListener("click", () => {
     elements.filterToggle.classList.toggle("active");
     elements.controls.classList.toggle("mobile-hidden");

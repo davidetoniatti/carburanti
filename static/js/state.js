@@ -22,7 +22,7 @@ export const state = {
   radius: SEARCH_CONFIG.DEFAULT_RADIUS,
   selectedStationId: null,
   lang: "en",
-  theme: "dark",
+  theme: "device",
   requests: {
     searchAbortController: null,
     detailAbortController: null,
@@ -100,12 +100,18 @@ export function toggleFavorite(station) {
 export function getStateFromURL() {
   const params = new URLSearchParams(window.location.search);
 
+  const lat = params.get("lat");
+  const lng = params.get("lng");
+  const zoom = params.get("zoom");
+  const fuel = params.get("fuel");
+  const radius = params.get("radius");
+
   return {
-    lat: parseFloat(params.get("lat")),
-    lng: parseFloat(params.get("lng")),
-    zoom: parseInt(params.get("zoom"), 10),
-    fuel: parseInt(params.get("fuel"), 10),
-    radius: parseInt(params.get("radius"), 10),
+    lat: lat ? parseFloat(lat) : null,
+    lng: lng ? parseFloat(lng) : null,
+    zoom: zoom ? parseInt(zoom, 10) : null,
+    fuel: fuel ? parseInt(fuel, 10) : null,
+    radius: radius ? parseInt(radius, 10) : null,
     brand: params.get("brand"),
   };
 }

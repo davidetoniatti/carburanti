@@ -51,10 +51,6 @@ function closeTopmost() {
     return true;
   }
 
-  if (clickIfPresent(elements.panelClose)) return true;
-  if (clickIfPresent(elements.historyPanelClose)) return true;
-  if (clickIfPresent(elements.favoritesPanelClose)) return true;
-
   return false;
 }
 
@@ -62,6 +58,12 @@ export function bindKeyboardShortcuts() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       if (closeTopmost()) e.preventDefault();
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      focusSearch();
       return;
     }
 
